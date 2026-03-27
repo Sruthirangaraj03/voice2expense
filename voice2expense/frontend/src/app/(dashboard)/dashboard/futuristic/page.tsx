@@ -43,117 +43,11 @@ const categoryColors: Record<string, string> = {
   education: "#00838F", other: "#546E7A",
 };
 
-function BudgetCard({ label, o }: { label: string; o: OverallPeriod }) {
-  if (!o.budget) return null;
-  const pct = Math.min(Math.round((o.spent / o.budget) * 100), 100);
-  const isOver = o.spent > o.budget;
-  const willExceed = o.projected > o.budget;
-  const barColor = isOver ? "#DC2626" : willExceed ? "#F59E0B" : "#22C55E";
-
-  return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm">
-      <p className="text-xs text-gray-400 uppercase font-medium mb-3">{label} Budget</p>
-
-      {/* Spent / Budget */}
-      <div className="flex items-end justify-between mb-1">
-        <p className="text-2xl font-bold text-gray-900">{fmt(o.spent)}</p>
-        <p className="text-sm text-gray-400">of {fmt(o.budget)}</p>
-      </div>
-
-      {/* Progress bar */}
-      <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden mb-3">
-        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: barColor }} />
-      </div>
-
-      {/* Status */}
-      {isOver ? (
-        <p className="text-sm text-red-600 font-semibold">
-          Over budget by {fmt(o.spent - o.budget)}
-        </p>
-      ) : (
-        <p className="text-sm text-gray-900">
-          <span className="font-semibold" style={{ color: barColor }}>{fmt(o.remaining_budget!)}</span> left for {o.days_remaining} day{o.days_remaining !== 1 && "s"}
-        </p>
-      )}
-
-      {/* Daily info */}
-      <div className="grid grid-cols-2 gap-2 mt-3">
-        <div className="bg-gray-50 rounded-xl p-2.5 text-center">
-          <p className="text-[10px] text-gray-400">You spend</p>
-          <p className="font-bold text-sm text-gray-900">{fmt(o.daily_rate)}/day</p>
-        </div>
-        <div className={`rounded-xl p-2.5 text-center ${willExceed ? "bg-red-50" : "bg-green-50"}`}>
-          <p className="text-[10px] text-gray-400">Safe limit</p>
-          <p className={`font-bold text-sm ${willExceed ? "text-red-600" : "text-green-600"}`}>
-            {o.safe_daily_limit !== null ? `${fmt(o.safe_daily_limit)}/day` : "-"}
-          </p>
-        </div>
-      </div>
-
-      {/* Projection sentence */}
-      {!isOver && (
-        <p className="text-xs text-gray-400 mt-3">
-          At this rate, you&apos;d spend {fmt(o.projected)} by end of the {label.toLowerCase()}
-          {willExceed
-            ? <span className="text-red-500"> — {fmt(o.projected - o.budget)} over budget</span>
-            : <span className="text-green-500"> — within budget</span>
-          }
-        </p>
-      )}
-    </div>
-  );
-}
-
-function CategoryRow({ cat, period }: { cat: CategoryPrediction; period: "weekly" | "monthly" }) {
-  const c = period === "weekly" ? cat.weekly : cat.monthly;
-  const color = categoryColors[cat.category] || "#546E7A";
-  const hasBudget = c.budget_limit !== null && c.budget_limit > 0;
-  const remaining = hasBudget ? Math.max(0, c.budget_limit! - c.spent) : null;
-  const pct = hasBudget ? Math.min(Math.round((c.spent / c.budget_limit!) * 100), 100) : null;
-  const isOver = hasBudget && c.spent > c.budget_limit!;
-  const willExceed = c.status === "will_exceed";
-  const barColor = isOver ? "#DC2626" : willExceed ? "#F59E0B" : pct !== null && pct > 80 ? "#F59E0B" : "#22C55E";
-
-  return (
-    <div className="px-4 py-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold"
-            style={{ backgroundColor: `${color}15`, color }}>
-            {cat.category.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <p className="font-semibold text-gray-900 capitalize text-sm">{cat.category}</p>
-            <p className="text-[11px] text-gray-400">{fmt(c.daily_rate)}/day</p>
-          </div>
-        </div>
-        <div className="text-right">
-          <p className="font-bold text-sm text-gray-900">{fmt(c.spent)}</p>
-          {hasBudget && (
-            <p className={`text-[11px] font-medium ${isOver ? "text-red-500" : "text-green-600"}`}>
-              {isOver ? `${fmt(c.spent - c.budget_limit!)} over` : `${fmt(remaining!)} left`}
-            </p>
-          )}
-          {!hasBudget && c.projected > 0 && (
-            <p className="text-[11px] text-gray-400">→ {fmt(c.projected)} est.</p>
-          )}
-        </div>
-      </div>
-      {hasBudget && pct !== null && (
-        <div className="mt-2">
-          <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-            <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: barColor }} />
-          </div>
-          <p className="text-[10px] text-gray-400 mt-0.5">{pct}% of {fmt(c.budget_limit!)} used</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function FuturisticPage() {
   const [data, setData] = useState<FuturisticData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<"weekly" | "monthly">("weekly");
+  const [selectedCat, setSelectedCat] = useState<string>("all");
 
   useEffect(() => {
     (async () => {
@@ -181,88 +75,209 @@ export default function FuturisticPage() {
     );
   }
 
-  const w = data.overall.weekly;
-  const m = data.overall.monthly;
-  const hasWeeklyBudget = w.budget !== null && w.budget > 0;
-  const hasMonthlyBudget = m.budget !== null && m.budget > 0;
-  const weeklyCats = data.categories.filter(c => c.weekly.budget_limit !== null && c.weekly.budget_limit > 0);
-  const monthlyCats = data.categories.filter(c => c.monthly.budget_limit !== null && c.monthly.budget_limit > 0);
-  const noBudgetCats = data.categories.filter(c =>
-    (c.weekly.budget_limit === null || c.weekly.budget_limit === 0) &&
-    (c.monthly.budget_limit === null || c.monthly.budget_limit === 0) &&
-    (c.weekly.spent > 0 || c.monthly.spent > 0)
-  );
+  const o = view === "weekly" ? data.overall.weekly : data.overall.monthly;
+  const periodName = view === "weekly" ? "week" : "month";
+  const hasBudget = o.budget !== null && o.budget > 0;
+  const isOver = hasBudget && o.spent > o.budget!;
+  const willExceed = hasBudget && o.projected > o.budget!;
+  const spentPct = hasBudget ? Math.min(Math.round((o.spent / o.budget!) * 100), 100) : 0;
+  const barColor = isOver ? "#DC2626" : willExceed ? "#F59E0B" : "#22C55E";
 
-  if (!hasWeeklyBudget && !hasMonthlyBudget && data.categories.length === 0) {
-    return (
-      <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
-        <p className="font-semibold text-gray-900">No data yet</p>
-        <p className="text-sm text-gray-400 mt-1">Set a budget and add expenses to see predictions</p>
-      </div>
-    );
-  }
+  const filteredCats = selectedCat === "all"
+    ? data.categories
+    : data.categories.filter(c => c.category === selectedCat);
 
   return (
     <div className="space-y-3">
 
-      {/* Weekly Budget Card */}
-      <BudgetCard label="Weekly" o={w} />
+      {/* Weekly / Monthly Toggle */}
+      <div className="flex gap-2">
+        <button onClick={() => { setView("weekly"); setSelectedCat("all"); }}
+          className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition ${view === "weekly" ? "bg-[#E65100] text-white" : "bg-white text-gray-900 shadow-sm"}`}>
+          Weekly
+        </button>
+        <button onClick={() => { setView("monthly"); setSelectedCat("all"); }}
+          className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition ${view === "monthly" ? "bg-[#E65100] text-white" : "bg-white text-gray-900 shadow-sm"}`}>
+          Monthly
+        </button>
+      </div>
 
-      {/* Weekly categories */}
-      {weeklyCats.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          <p className="px-4 py-2.5 text-[10px] text-gray-400 uppercase font-medium border-b border-gray-50">Weekly by category</p>
-          <div className="divide-y divide-gray-50">
-            {weeklyCats.map(cat => <CategoryRow key={cat.category} cat={cat} period="weekly" />)}
+      {/* Main Budget Card */}
+      {hasBudget ? (
+        <div className="bg-white rounded-2xl p-5 shadow-sm">
+          {/* Budget and Spent */}
+          <div className="flex items-end justify-between mb-1">
+            <div>
+              <p className="text-[10px] text-gray-400 uppercase font-medium">Spent</p>
+              <p className="text-3xl font-bold text-gray-900">{fmt(o.spent)}</p>
+            </div>
+            <p className="text-sm text-gray-400 mb-1">of {fmt(o.budget!)} budget</p>
           </div>
+
+          {/* Progress */}
+          <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden mb-3">
+            <div className="h-full rounded-full transition-all" style={{ width: `${spentPct}%`, backgroundColor: barColor }} />
+          </div>
+
+          {/* Simple sentence */}
+          <div className={`rounded-xl p-4 mb-3 ${isOver ? "bg-red-50" : willExceed ? "bg-amber-50" : "bg-green-50"}`}>
+            {isOver ? (
+              <p className="text-sm text-red-700">
+                <span className="font-bold">You crossed your {periodName} budget.</span> You&apos;re {fmt(o.spent - o.budget!)} over.
+                {o.days_remaining > 0 && ` Try to avoid spending for the next ${o.days_remaining} day${o.days_remaining > 1 ? "s" : ""}.`}
+              </p>
+            ) : willExceed ? (
+              <p className="text-sm text-amber-700">
+                <span className="font-bold">You&apos;d spend {fmt(o.projected)} by end of the {periodName}.</span> That&apos;s {fmt(o.projected - o.budget!)} over budget.
+                {o.safe_daily_limit !== null && ` Reduce to ${fmt(o.safe_daily_limit)}/day to stay within budget.`}
+              </p>
+            ) : (
+              <p className="text-sm text-green-700">
+                <span className="font-bold">You&apos;re on track!</span> {fmt(o.remaining_budget!)} left for {o.days_remaining} day{o.days_remaining > 1 ? "s" : ""}.
+                {o.safe_daily_limit !== null && ` You can safely spend ${fmt(o.safe_daily_limit)}/day.`}
+              </p>
+            )}
+          </div>
+
+          {/* 3 stats */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-gray-50 rounded-xl p-2.5 text-center">
+              <p className="text-[10px] text-gray-400">Your rate</p>
+              <p className="font-bold text-sm text-gray-900">{fmt(o.daily_rate)}/day</p>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-2.5 text-center">
+              <p className="text-[10px] text-gray-400">Day {o.days_elapsed}</p>
+              <p className="font-bold text-sm text-gray-900">{o.days_remaining}d left</p>
+            </div>
+            <div className={`rounded-xl p-2.5 text-center ${willExceed || isOver ? "bg-red-50" : "bg-green-50"}`}>
+              <p className="text-[10px] text-gray-400">Safe limit</p>
+              <p className={`font-bold text-sm ${willExceed || isOver ? "text-red-600" : "text-green-600"}`}>
+                {o.safe_daily_limit !== null ? `${fmt(o.safe_daily_limit)}/day` : "-"}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* No budget — simple estimation */
+        <div className="bg-white rounded-2xl p-5 shadow-sm">
+          <p className="text-xs text-gray-400 mb-1">You spent {fmt(o.spent)} in {o.days_elapsed} day{o.days_elapsed > 1 ? "s" : ""}</p>
+          <p className="text-gray-900 text-lg font-bold">
+            At this rate, you&apos;d spend <span className="text-[#E65100]">{fmt(o.projected)}</span> by end of the {periodName}
+          </p>
+          <p className="text-xs text-gray-400 mt-2">Spending rate: {fmt(o.daily_rate)}/day — {o.days_remaining} day{o.days_remaining > 1 ? "s" : ""} remaining</p>
+          <p className="text-xs text-gray-400 mt-1">Set a {periodName}ly budget to get detailed predictions</p>
         </div>
       )}
 
-      {/* Monthly Budget Card */}
-      <BudgetCard label="Monthly" o={m} />
-
-      {/* Monthly categories */}
-      {monthlyCats.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          <p className="px-4 py-2.5 text-[10px] text-gray-400 uppercase font-medium border-b border-gray-50">Monthly by category</p>
-          <div className="divide-y divide-gray-50">
-            {monthlyCats.map(cat => <CategoryRow key={cat.category} cat={cat} period="monthly" />)}
-          </div>
-        </div>
-      )}
-
-      {/* Categories without budget */}
-      {noBudgetCats.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          <p className="px-4 py-2.5 text-[10px] text-gray-400 uppercase font-medium border-b border-gray-50">Other spending</p>
-          <div className="divide-y divide-gray-50">
-            {noBudgetCats.map(cat => <CategoryRow key={cat.category} cat={cat} period="weekly" />)}
-          </div>
-        </div>
-      )}
-
-      {/* Insights */}
-      {data.insights.length > 0 && (
-        <div className="space-y-2">
-          {data.insights.map((insight, i) => {
-            const isWarn = insight.includes("exceed") || insight.includes("Reduce") || insight.includes("limit spending") || insight.includes("over");
-            const isGood = insight.includes("on track") || insight.includes("within budget") || insight.includes("Safe to");
+      {/* Category Filter Pills */}
+      {data.categories.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          <button onClick={() => setSelectedCat("all")}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition ${
+              selectedCat === "all" ? "bg-[#E65100] text-white" : "bg-white text-gray-900 shadow-sm"
+            }`}>
+            All
+          </button>
+          {data.categories.map((cat) => {
+            const c = view === "weekly" ? cat.weekly : cat.monthly;
+            const color = categoryColors[cat.category] || "#546E7A";
             return (
-              <div key={i}
-                className={`px-4 py-3 rounded-2xl text-sm flex items-start gap-3 ${
-                  isWarn ? "bg-red-50 text-red-700" : isGood ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700"
+              <button key={cat.category} onClick={() => setSelectedCat(cat.category)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap capitalize transition flex items-center gap-1.5 ${
+                  selectedCat === cat.category ? "bg-[#E65100] text-white" : "bg-white text-gray-900 shadow-sm"
                 }`}>
-                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  {isWarn ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: selectedCat === cat.category ? "white" : color }} />
+                {cat.category}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Category Cards */}
+      {filteredCats.length > 0 && (
+        <div className="space-y-2">
+          {filteredCats.map((cat) => {
+            const c = view === "weekly" ? cat.weekly : cat.monthly;
+            const color = categoryColors[cat.category] || "#546E7A";
+            const hasCatBudget = c.budget_limit !== null && c.budget_limit > 0;
+            const remaining = hasCatBudget ? Math.max(0, c.budget_limit! - c.spent) : null;
+            const catOver = hasCatBudget && c.spent > c.budget_limit!;
+            const catWillExceed = c.status === "will_exceed";
+            const catWarning = c.status === "warning";
+            const pct = hasCatBudget ? Math.min(Math.round((c.spent / c.budget_limit!) * 100), 100) : null;
+            const catBarColor = catOver ? "#DC2626" : catWillExceed ? "#F59E0B" : catWarning ? "#F59E0B" : "#22C55E";
+
+            return (
+              <div key={cat.category} className="bg-white rounded-2xl p-4 shadow-sm">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold"
+                      style={{ backgroundColor: `${color}15`, color }}>
+                      {cat.category.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-900 capitalize">{cat.category}</p>
+                      <p className="text-[11px] text-gray-400">{fmt(c.daily_rate)}/day avg</p>
+                    </div>
+                  </div>
+                  {c.status && (
+                    <span className={`text-[10px] px-2.5 py-1 rounded-full font-semibold ${
+                      catOver || catWillExceed ? "bg-red-50 text-red-600"
+                        : catWarning ? "bg-amber-50 text-amber-600"
+                        : "bg-green-50 text-green-600"
+                    }`}>
+                      {catOver ? "Over" : catWillExceed ? "Will Exceed" : catWarning ? "Warning" : "On Track"}
+                    </span>
                   )}
-                </svg>
-                <span>{insight}</span>
+                </div>
+
+                {hasCatBudget ? (
+                  <>
+                    {/* Spent of Budget */}
+                    <div className="flex items-end justify-between mb-1">
+                      <p className="text-lg font-bold text-gray-900">{fmt(c.spent)}</p>
+                      <p className="text-xs text-gray-400">of {fmt(c.budget_limit!)}</p>
+                    </div>
+
+                    {/* Progress */}
+                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-2">
+                      <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: catBarColor }} />
+                    </div>
+
+                    {/* Remaining or Over */}
+                    <p className={`text-sm font-medium ${catOver ? "text-red-600" : "text-green-600"}`}>
+                      {catOver
+                        ? `${fmt(c.spent - c.budget_limit!)} over budget`
+                        : `${fmt(remaining!)} remaining`
+                      }
+                    </p>
+
+                    {/* Projection */}
+                    <p className="text-xs text-gray-400 mt-1">
+                      Projected: {fmt(c.projected)} by end of {periodName}
+                      {catWillExceed && !catOver && ` — ${fmt(c.projected - c.budget_limit!)} over budget`}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-lg font-bold text-gray-900">{fmt(c.spent)} spent</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      At {fmt(c.daily_rate)}/day, you&apos;d spend {fmt(c.projected)} by end of {periodName}
+                    </p>
+                  </>
+                )}
               </div>
             );
           })}
+        </div>
+      )}
+
+      {data.categories.length === 0 && (
+        <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+          <p className="font-semibold text-gray-900">No expenses yet</p>
+          <p className="text-sm text-gray-400 mt-1">Add expenses to see predictions</p>
         </div>
       )}
     </div>
