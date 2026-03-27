@@ -46,8 +46,7 @@ export default function ExpensesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">Expenses</h2>
+      <div className="flex items-center justify-end">
         <button
           onClick={() => { setEditingExpense(null); setShowForm(true); }}
           className="px-4 py-2 bg-[#E65100] text-white rounded-full text-sm font-medium"

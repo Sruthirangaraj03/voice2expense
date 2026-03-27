@@ -40,8 +40,7 @@ export default function InsightsPage() {
   const suggestions = ["How much did I spend this month?", "What's my biggest category?", "Last week's total?", "Budget health?"];
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)]">
-      <h2 className="text-xl font-bold mb-4">AI Assistant</h2>
+    <div className="flex flex-col h-[calc(100vh-120px)]">
 
       <div className="flex-1 overflow-y-auto space-y-4 pb-4">
         {messages.length === 0 && (
