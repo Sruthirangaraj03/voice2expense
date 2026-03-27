@@ -1,20 +1,28 @@
-import { Controller, Post, Body, UseGuards, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { Controller, Post, Body, BadRequestException } from '@nestjs/common';
+import { IsString, IsOptional } from 'class-validator';
 import { AIService } from './ai.service';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { ParseTextDto, QueryDto } from './dto/ai.dto';
 
+class VoiceLogDto {
+  @IsString()
+  audio: string;
+
+  @IsString()
+  @IsOptional()
+  filename: string;
+}
+
+const DEFAULT_USER_ID = '50f6bc48-568f-479e-901d-31eee14511aa';
+
 @Controller('ai')
-@UseGuards(AuthGuard('jwt'))
 export class AIController {
   constructor(private aiService: AIService) {}
 
   @Post('transcribe')
-  @UseInterceptors(FileInterceptor('audio', { limits: { fileSize: 10 * 1024 * 1024 } }))
-  transcribe(@UploadedFile() file: Express.Multer.File) {
-    if (!file) throw new BadRequestException('Audio file is required');
-    return this.aiService.transcribe(file.buffer, file.originalname);
+  transcribe(@Body() body: VoiceLogDto) {
+    if (!body.audio) throw new BadRequestException('Audio data is required');
+    const buffer = Buffer.from(body.audio, 'base64');
+    return this.aiService.transcribe(buffer, body.filename || 'recording.wav');
   }
 
   @Post('parse')
@@ -23,17 +31,14 @@ export class AIController {
   }
 
   @Post('voice-log')
-  @UseInterceptors(FileInterceptor('audio', { limits: { fileSize: 10 * 1024 * 1024 } }))
-  voiceLog(
-    @CurrentUser('sub') userId: string,
-    @UploadedFile() file: Express.Multer.File,
-  ) {
-    if (!file) throw new BadRequestException('Audio file is required');
-    return this.aiService.voiceLog(userId, file.buffer, file.originalname);
+  voiceLog(@Body() body: VoiceLogDto) {
+    if (!body.audio) throw new BadRequestException('Audio data is required');
+    const buffer = Buffer.from(body.audio, 'base64');
+    return this.aiService.voiceLog(DEFAULT_USER_ID, buffer, body.filename || 'recording.wav');
   }
 
   @Post('query')
-  query(@CurrentUser('sub') userId: string, @Body() dto: QueryDto) {
-    return this.aiService.query(userId, dto.question);
+  query(@Body() dto: QueryDto) {
+    return this.aiService.query(DEFAULT_USER_ID, dto.question);
   }
 }

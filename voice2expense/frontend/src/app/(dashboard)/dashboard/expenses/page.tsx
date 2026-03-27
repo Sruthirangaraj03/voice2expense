@@ -4,114 +4,115 @@ import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import type { Expense } from "@/types";
-import { ExpenseList } from "@/components/expense/ExpenseList";
 import { ExpenseForm } from "@/components/expense/ExpenseForm";
-import { VoiceRecorder } from "@/components/voice/VoiceRecorder";
+
+const categories = ["food", "transport", "entertainment", "shopping", "bills", "health", "education", "other"];
+const categoryIcons: Record<string, string> = {
+  food: "F", transport: "T", entertainment: "E", shopping: "S",
+  bills: "B", health: "H", education: "Ed", other: "O",
+};
 
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
-  const [filter, setFilter] = useState({ category: "", type: "" });
+  const [filterCategory, setFilterCategory] = useState("");
 
   const fetchExpenses = useCallback(async () => {
     try {
       const params = new URLSearchParams();
-      if (filter.category) params.set("category", filter.category);
-      if (filter.type) params.set("type", filter.type);
+      if (filterCategory) params.set("category", filterCategory);
       params.set("limit", "50");
-
       const res = await api.get(`/api/expenses?${params.toString()}`);
       setExpenses(res.data);
     } catch (err) {
-      console.error("Failed to fetch expenses:", err);
+      console.error("Failed to fetch:", err);
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, [filterCategory]);
 
-  useEffect(() => {
-    fetchExpenses();
-  }, [fetchExpenses]);
+  useEffect(() => { fetchExpenses(); }, [fetchExpenses]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this expense?')) return;
+    if (!confirm("Delete this expense?")) return;
     try {
       await api.delete(`/api/expenses/${id}`);
-      toast.success('Expense deleted');
+      toast.success("Deleted");
       fetchExpenses();
-    } catch (err) {
-      console.error("Failed to delete:", err);
-      toast.error('Failed to delete expense');
-    }
-  };
-
-  const handleEdit = (expense: Expense) => {
-    setEditingExpense(expense);
-    setShowForm(true);
-  };
-
-  const handleFormSuccess = () => {
-    setShowForm(false);
-    setEditingExpense(null);
-    fetchExpenses();
+    } catch { toast.error("Failed to delete"); }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <h2 className="text-2xl font-bold text-white">Expenses</h2>
-        <div className="flex gap-3">
-          <VoiceRecorder onSuccess={fetchExpenses} />
-          <button
-            onClick={() => { setEditingExpense(null); setShowForm(true); }}
-            className="px-4 py-2 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-600 transition"
-          >
-            + Add Expense
-          </button>
-        </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">Expenses</h2>
+        <button
+          onClick={() => { setEditingExpense(null); setShowForm(true); }}
+          className="px-4 py-2 bg-[#E65100] text-white rounded-full text-sm font-medium"
+        >
+          + Add
+        </button>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-3 flex-wrap">
-        <select
-          value={filter.category}
-          onChange={(e) => setFilter((f) => ({ ...f, category: e.target.value }))}
-          className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-300 text-sm"
+      {/* Category filter */}
+      <div className="flex gap-2 overflow-x-auto pb-2">
+        <button
+          onClick={() => setFilterCategory("")}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap ${!filterCategory ? "bg-[#E65100] text-white" : "bg-white text-gray-600"}`}
         >
-          <option value="">All Categories</option>
-          {["food", "transport", "entertainment", "shopping", "bills", "health", "education", "other"].map((c) => (
-            <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
-          ))}
-        </select>
-        <select
-          value={filter.type}
-          onChange={(e) => setFilter((f) => ({ ...f, type: e.target.value }))}
-          className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-300 text-sm"
-        >
-          <option value="">All Types</option>
-          <option value="expense">Expense</option>
-          <option value="income">Income</option>
-        </select>
+          All
+        </button>
+        {categories.map((c) => (
+          <button
+            key={c}
+            onClick={() => setFilterCategory(c)}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium capitalize whitespace-nowrap ${filterCategory === c ? "bg-[#E65100] text-white" : "bg-white text-gray-600"}`}
+          >
+            {c}
+          </button>
+        ))}
       </div>
 
       {showForm && (
         <ExpenseForm
           expense={editingExpense}
-          onSuccess={handleFormSuccess}
+          onSuccess={() => { setShowForm(false); setEditingExpense(null); fetchExpenses(); }}
           onCancel={() => { setShowForm(false); setEditingExpense(null); }}
         />
       )}
 
       {loading ? (
-        <div className="space-y-3">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-16 bg-slate-800 rounded-lg animate-pulse" />
-          ))}
+        <div className="space-y-2">{[...Array(5)].map((_, i) => <div key={i} className="h-16 bg-white rounded-2xl animate-pulse" />)}</div>
+      ) : expenses.length === 0 ? (
+        <div className="text-center py-12 text-gray-400">
+          <p className="text-lg">No expenses yet</p>
         </div>
       ) : (
-        <ExpenseList expenses={expenses} onEdit={handleEdit} onDelete={handleDelete} />
+        <div className="space-y-2">
+          {expenses.map((e) => (
+            <div key={e.id} className="flex items-center justify-between bg-white rounded-2xl p-4 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-xs font-bold text-[#E65100]">
+                  {categoryIcons[e.category] || "O"}
+                </div>
+                <div>
+                  <p className="font-medium text-sm">{e.description || e.category}</p>
+                  <p className="text-xs text-gray-400">
+                    {e.sub_type && <span className="capitalize text-[#E65100]">{e.sub_type} &middot; </span>}
+                    {e.date} {e.source === "voice" ? "(voice)" : ""}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="font-semibold">₹{Number(e.amount).toLocaleString("en-IN")}</span>
+                <button onClick={() => { setEditingExpense(e); setShowForm(true); }} className="text-gray-400 text-xs">Edit</button>
+                <button onClick={() => handleDelete(e.id)} className="text-gray-400 text-xs">X</button>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

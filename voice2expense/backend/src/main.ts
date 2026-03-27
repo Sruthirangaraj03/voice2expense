@@ -3,12 +3,16 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { json } from 'express';
 
 let app: any;
 
 async function createApp() {
   if (!app) {
     app = await NestFactory.create(AppModule);
+
+    // Allow large JSON bodies for base64 audio uploads
+    app.use(json({ limit: '10mb' }));
 
     app.enableCors({
       origin: process.env.CORS_ORIGIN || 'http://localhost:3000',

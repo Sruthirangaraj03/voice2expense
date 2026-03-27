@@ -38,7 +38,6 @@ export class PredictionService {
       .from('expenses')
       .select('*')
       .eq('user_id', userId)
-      .eq('type', 'expense')
       .gte('date', ninetyDaysAgo)
       .order('date', { ascending: true });
 
@@ -49,6 +48,7 @@ export class PredictionService {
     const response = await fetch(this.baseUrl, {
       method: 'POST',
       headers: {
+        'api-subscription-key': this.apiKey,
         'Authorization': `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json',
       },

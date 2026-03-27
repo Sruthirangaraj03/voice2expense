@@ -20,7 +20,7 @@ export class ExpenseService {
 
   async findAll(userId: string, query: QueryExpensesDto) {
     const client = this.supabase.getClient();
-    const { page = 1, limit = 20, category, type, from, to, sort = 'date:desc' } = query;
+    const { page = 1, limit = 20, category, from, to, sort = 'date:desc' } = query;
 
     let qb = client
       .from('expenses')
@@ -28,7 +28,6 @@ export class ExpenseService {
       .eq('user_id', userId);
 
     if (category) qb = qb.eq('category', category);
-    if (type) qb = qb.eq('type', type);
     if (from) qb = qb.gte('date', from);
     if (to) qb = qb.lte('date', to);
 

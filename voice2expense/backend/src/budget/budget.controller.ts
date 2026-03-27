@@ -1,31 +1,30 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Controller, Get, Post, Delete, Body, Param, Query } from '@nestjs/common';
 import { BudgetService } from './budget.service';
 import { CreateBudgetDto } from './dto/budget.dto';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
+
+const DEFAULT_USER_ID = '50f6bc48-568f-479e-901d-31eee14511aa';
 
 @Controller('budgets')
-@UseGuards(AuthGuard('jwt'))
 export class BudgetController {
   constructor(private budgetService: BudgetService) {}
 
   @Post()
-  create(@CurrentUser('sub') userId: string, @Body() dto: CreateBudgetDto) {
-    return this.budgetService.create(userId, dto);
+  create(@Body() dto: CreateBudgetDto) {
+    return this.budgetService.create(DEFAULT_USER_ID, dto);
   }
 
   @Get()
-  findAll(@CurrentUser('sub') userId: string, @Query('month') month?: string) {
-    return this.budgetService.findAll(userId, month);
+  findAll(@Query('month') month?: string) {
+    return this.budgetService.findAll(DEFAULT_USER_ID, month);
   }
 
   @Get('status')
-  getStatus(@CurrentUser('sub') userId: string, @Query('month') month?: string) {
-    return this.budgetService.getStatus(userId, month);
+  getStatus(@Query('month') month?: string) {
+    return this.budgetService.getStatus(DEFAULT_USER_ID, month);
   }
 
   @Delete(':id')
-  remove(@CurrentUser('sub') userId: string, @Param('id') id: string) {
-    return this.budgetService.remove(userId, id);
+  remove(@Param('id') id: string) {
+    return this.budgetService.remove(DEFAULT_USER_ID, id);
   }
 }

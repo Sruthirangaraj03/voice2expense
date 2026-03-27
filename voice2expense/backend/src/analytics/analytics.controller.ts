@@ -1,37 +1,24 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Controller, Get, Query } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
+
+const DEFAULT_USER_ID = '50f6bc48-568f-479e-901d-31eee14511aa';
 
 @Controller('analytics')
-@UseGuards(AuthGuard('jwt'))
 export class AnalyticsController {
   constructor(private analyticsService: AnalyticsService) {}
 
   @Get('summary')
-  getSummary(
-    @CurrentUser('sub') userId: string,
-    @Query('from') from?: string,
-    @Query('to') to?: string,
-  ) {
-    return this.analyticsService.getSummary(userId, from, to);
+  getSummary(@Query('from') from?: string, @Query('to') to?: string) {
+    return this.analyticsService.getSummary(DEFAULT_USER_ID, from, to);
   }
 
   @Get('breakdown')
-  getBreakdown(
-    @CurrentUser('sub') userId: string,
-    @Query('from') from?: string,
-    @Query('to') to?: string,
-  ) {
-    return this.analyticsService.getBreakdown(userId, from, to);
+  getBreakdown(@Query('from') from?: string, @Query('to') to?: string) {
+    return this.analyticsService.getBreakdown(DEFAULT_USER_ID, from, to);
   }
 
   @Get('trends')
-  getTrends(
-    @CurrentUser('sub') userId: string,
-    @Query('from') from?: string,
-    @Query('to') to?: string,
-  ) {
-    return this.analyticsService.getTrends(userId, from, to);
+  getTrends(@Query('from') from?: string, @Query('to') to?: string) {
+    return this.analyticsService.getTrends(DEFAULT_USER_ID, from, to);
   }
 }

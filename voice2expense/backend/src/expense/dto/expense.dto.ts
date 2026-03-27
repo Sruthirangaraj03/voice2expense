@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsIn, IsDateString, Min, Max, IsInt, MaxLength } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsDateString, IsIn, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateExpenseDto {
@@ -12,23 +12,20 @@ export class CreateExpenseDto {
   category: string;
 
   @IsString()
-  @IsIn(['expense', 'income'])
   @IsOptional()
-  type?: string = 'expense';
+  sub_type?: string;
 
   @IsString()
-  @MaxLength(500)
   @IsOptional()
   description?: string;
-
-  @IsString()
-  @IsIn(['manual', 'voice'])
-  @IsOptional()
-  source?: string = 'manual';
 
   @IsDateString()
   @IsOptional()
   date?: string;
+
+  @IsString()
+  @IsOptional()
+  source?: string;
 }
 
 export class UpdateExpenseDto {
@@ -44,52 +41,44 @@ export class UpdateExpenseDto {
   category?: string;
 
   @IsString()
-  @IsIn(['expense', 'income'])
   @IsOptional()
-  type?: string;
+  sub_type?: string;
 
   @IsString()
-  @MaxLength(500)
   @IsOptional()
   description?: string;
 
   @IsDateString()
   @IsOptional()
   date?: string;
+
+  @IsString()
+  @IsOptional()
+  source?: string;
 }
 
 export class QueryExpensesDto {
   @IsOptional()
+  @Type(() => Number)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  limit?: number;
+
   @IsString()
+  @IsOptional()
   category?: string;
 
-  @IsOptional()
-  @IsString()
-  type?: string;
-
-  @IsOptional()
   @IsDateString()
+  @IsOptional()
   from?: string;
 
-  @IsOptional()
   @IsDateString()
+  @IsOptional()
   to?: string;
 
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  page?: number = 1;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit?: number = 20;
-
-  @IsOptional()
   @IsString()
-  @IsIn(['date:asc', 'date:desc', 'amount:asc', 'amount:desc', 'category:asc', 'category:desc'])
-  sort?: string = 'date:desc';
+  @IsOptional()
+  sort?: string;
 }

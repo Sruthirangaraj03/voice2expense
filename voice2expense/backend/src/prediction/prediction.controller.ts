@@ -1,20 +1,19 @@
-import { Controller, Get, Post, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Controller, Get, Post } from '@nestjs/common';
 import { PredictionService } from './prediction.service';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
+
+const DEFAULT_USER_ID = '50f6bc48-568f-479e-901d-31eee14511aa';
 
 @Controller('predictions')
-@UseGuards(AuthGuard('jwt'))
 export class PredictionController {
   constructor(private predictionService: PredictionService) {}
 
   @Get()
-  getForecasts(@CurrentUser('sub') userId: string) {
-    return this.predictionService.getForecasts(userId);
+  getForecasts() {
+    return this.predictionService.getForecasts(DEFAULT_USER_ID);
   }
 
   @Post('generate')
-  generate(@CurrentUser('sub') userId: string) {
-    return this.predictionService.generate(userId);
+  generate() {
+    return this.predictionService.generate(DEFAULT_USER_ID);
   }
 }
