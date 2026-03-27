@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
@@ -16,7 +16,7 @@ export class LoggingInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest();
     const { method, url } = request;
-    const correlationId = uuidv4();
+    const correlationId = randomUUID();
     const start = Date.now();
 
     request.correlationId = correlationId;

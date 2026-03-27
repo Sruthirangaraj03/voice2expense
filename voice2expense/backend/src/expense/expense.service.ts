@@ -1,16 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
 import { SupabaseService } from '../common/supabase/supabase.service';
 import { CreateExpenseDto, UpdateExpenseDto, QueryExpensesDto } from './dto/expense.dto';
 
 @Injectable()
 export class ExpenseService {
-  constructor(
-    private supabase: SupabaseService,
-    @InjectQueue('budget-alert') private budgetAlertQueue: Queue,
-    @InjectQueue('analytics-refresh') private analyticsRefreshQueue: Queue,
-  ) {}
+  constructor(private supabase: SupabaseService) {}
 
   async create(userId: string, dto: CreateExpenseDto) {
     const client = this.supabase.getClient();
@@ -21,15 +15,6 @@ export class ExpenseService {
       .single();
 
     if (error) throw new Error(error.message);
-
-    // Trigger background jobs (non-blocking, graceful if Redis is down)
-    try {
-      await this.budgetAlertQueue.add('check', { userId, category: dto.category });
-      await this.analyticsRefreshQueue.add('refresh', { userId });
-    } catch {
-      // Redis not available — skip background jobs silently
-    }
-
     return data;
   }
 

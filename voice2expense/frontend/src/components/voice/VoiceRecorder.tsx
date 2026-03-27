@@ -46,7 +46,7 @@ export function VoiceRecorder({ onSuccess }: VoiceRecorderProps) {
         await processAudio(blob);
       };
 
-      mediaRecorder.start();
+      mediaRecorder.start(250); // Collect data every 250ms for reliable chunks
       setRecording(true);
     } catch (err) {
       console.error("Microphone access denied:", err);
@@ -64,8 +64,9 @@ export function VoiceRecorder({ onSuccess }: VoiceRecorderProps) {
   const processAudio = async (blob: Blob) => {
     setProcessing(true);
     try {
+      const ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
       const formData = new FormData();
-      formData.append("audio", blob, "recording.webm");
+      formData.append("audio", blob, `recording.${ext}`);
       await api.upload("/api/ai/voice-log", formData);
       toast.success("Expense logged via voice!");
       onSuccess?.();

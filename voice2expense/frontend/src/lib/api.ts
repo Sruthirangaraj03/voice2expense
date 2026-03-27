@@ -1,11 +1,9 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
 async function refreshAccessToken(): Promise<string | null> {
   const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refresh_token') : null;
   if (!refreshToken) return null;
 
   try {
-    const res = await fetch(`${API_URL}/api/auth/refresh`, {
+    const res = await fetch(`/api/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh_token: refreshToken }),
@@ -26,7 +24,7 @@ async function fetchApi(endpoint: string, options: RequestInit = {}) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
   const makeRequest = async (authToken: string | null) => {
-    return fetch(`${API_URL}${endpoint}`, {
+    return fetch(`${endpoint}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
@@ -73,7 +71,7 @@ export const api = {
     fetchApi(endpoint, { method: 'DELETE' }),
   upload: async (endpoint: string, formData: FormData) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const res = await fetch(`${API_URL}${endpoint}`, {
+    const res = await fetch(`${endpoint}`, {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
