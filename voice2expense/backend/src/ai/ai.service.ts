@@ -135,13 +135,17 @@ export class AIService {
     const weekAgoDate = weekAgo.toISOString().split('T')[0];
     const todayDate = now.toISOString().split('T')[0];
 
-    const typedExpenses = (expenses || []) as Array<{
-      amount: number; category: string; sub_type?: string;
-      description?: string; date: string; source?: string;
-    }>;
+    const typedExpenses = (expenses || []).map((e: Record<string, unknown>) => ({
+      amount: Number(e.amount),
+      category: String(e.category || ''),
+      sub_type: e.sub_type ? String(e.sub_type) : undefined,
+      description: e.description ? String(e.description) : undefined,
+      date: String(e.date || '').split('T')[0], // ensure YYYY-MM-DD format
+      source: e.source ? String(e.source) : undefined,
+    }));
 
     // Current month expenses
-    const thisMonthExpenses = typedExpenses.filter(e => e.date >= currentMonthStart);
+    const thisMonthExpenses = typedExpenses.filter(e => e.date >= currentMonthStart && e.date <= todayDate);
     const lastMonthExpenses = typedExpenses.filter(e => e.date >= lastMonthStart && e.date <= lastMonthEnd);
     const thisWeekExpenses = typedExpenses.filter(e => e.date >= weekAgoDate && e.date <= todayDate);
 
