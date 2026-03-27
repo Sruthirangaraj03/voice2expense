@@ -59,11 +59,14 @@ export default function DashboardLayout({
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-50">
           <div className="w-10 h-10 bg-[#E65100] rounded-xl flex items-center justify-center">
-            <span className="text-white text-lg">🎙️</span>
+            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+              <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+            </svg>
           </div>
           <div>
-            <p className="font-bold text-sm text-gray-800 uppercase tracking-wider">Vocal Ledger Pro</p>
-            <p className="text-[10px] text-gray-400">Intelligent Finance</p>
+            <p className="font-bold text-sm text-gray-800 uppercase tracking-wider">Voice2Expense</p>
+            <p className="text-[10px] text-gray-400">AI Expense Tracker</p>
           </div>
         </div>
 
@@ -107,9 +110,12 @@ export default function DashboardLayout({
         <header className="flex md:hidden items-center justify-between px-5 py-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-[#E65100] rounded-full flex items-center justify-center">
-              <span className="text-white text-sm">🎙️</span>
+              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+              </svg>
             </div>
-            <span className="font-bold text-[#E65100] text-lg">Logger</span>
+            <span className="font-bold text-[#E65100] text-lg">Voice2Expense</span>
           </div>
           <Link
             href="/dashboard/expenses"

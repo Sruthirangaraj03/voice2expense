@@ -123,7 +123,9 @@ export default function BudgetPage() {
         <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-20 bg-white rounded-2xl animate-pulse" />)}</div>
       ) : budgets.length === 0 ? (
         <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
-          <p className="text-4xl mb-3">o</p>
+          <svg className="w-10 h-10 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />
+          </svg>
           <p className="font-semibold">No active budgets</p>
           <p className="text-sm text-gray-400 mt-1">Set weekly or monthly spending limits per category</p>
         </div>

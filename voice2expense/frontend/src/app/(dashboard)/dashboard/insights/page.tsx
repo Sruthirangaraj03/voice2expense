@@ -59,8 +59,10 @@ export default function InsightsPage() {
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
             {msg.role === "assistant" && (
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-2 mt-1 flex-shrink-0">
-                <span className="text-xs">AI</span>
+              <div className="w-8 h-8 bg-orange-50 rounded-full flex items-center justify-center mr-2 mt-1 flex-shrink-0">
+                <svg className="w-4 h-4 text-[#E65100]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+                </svg>
               </div>
             )}
             <div className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm ${
@@ -95,7 +97,10 @@ export default function InsightsPage() {
 
       <form onSubmit={handleSubmit} className="flex gap-2 pt-3 border-t border-gray-100">
         <div className="w-10 h-10 bg-[#E65100] rounded-full flex items-center justify-center flex-shrink-0">
-          <span className="text-white text-sm">Mic</span>
+          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+          </svg>
         </div>
         <input type="text" value={input} onChange={(e) => setInput(e.target.value)} disabled={loading}
           placeholder="Ask me anything..."

@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Vocal Ledger Pro - AI Expense Tracker",
+  title: "Voice2Expense - AI Expense Tracker",
   description: "Log, categorize, and analyze expenses using voice with AI",
 };
 
