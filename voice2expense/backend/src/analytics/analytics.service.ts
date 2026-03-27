@@ -252,28 +252,44 @@ export class AnalyticsService {
       .filter((b) => b.period_type === 'weekly')
       .reduce((s, b) => s + b.limit_amount, 0);
 
-    if (totalMonthBudget > 0) {
-      if (projectedMonth > totalMonthBudget) {
-        insights.push(`At your current spending rate, you will exceed your monthly budget by Rs.${(projectedMonth - totalMonthBudget).toLocaleString('en-IN')}.`);
-      } else {
-        insights.push(`You are on track to stay within your monthly budget.`);
-      }
-    }
+    // Compute safe daily limits
+    const weekRemaining = Math.max(0, totalWeekBudget - weeklySpent);
+    const safeDailyWeek = daysLeftWeek > 0 ? Math.round(weekRemaining / daysLeftWeek) : 0;
+    const monthRemaining = Math.max(0, totalMonthBudget - monthlySpent);
+    const safeDailyMonth = daysLeftMonth > 0 ? Math.round(monthRemaining / daysLeftMonth) : 0;
+
     if (totalWeekBudget > 0) {
       if (projectedWeek > totalWeekBudget) {
-        insights.push(`Weekly spending may exceed budget by Rs.${(projectedWeek - totalWeekBudget).toLocaleString('en-IN')}.`);
+        insights.push(`You spent Rs.${weeklySpent.toLocaleString('en-IN')} in ${daysIntoWeek} day${daysIntoWeek > 1 ? 's' : ''}. At Rs.${Math.round(dailyRateWeek).toLocaleString('en-IN')}/day, you'll hit Rs.${projectedWeek.toLocaleString('en-IN')} by end of week — Rs.${(projectedWeek - totalWeekBudget).toLocaleString('en-IN')} over your Rs.${totalWeekBudget.toLocaleString('en-IN')} budget.`);
+        if (daysLeftWeek > 0) {
+          insights.push(`To stay within budget, limit spending to Rs.${safeDailyWeek.toLocaleString('en-IN')}/day for the remaining ${daysLeftWeek} day${daysLeftWeek > 1 ? 's' : ''}.`);
+        }
       } else {
-        insights.push(`Weekly spending is within budget.`);
+        insights.push(`Weekly spending is on track. You can spend Rs.${safeDailyWeek.toLocaleString('en-IN')}/day for the next ${daysLeftWeek} day${daysLeftWeek > 1 ? 's' : ''}.`);
+      }
+    }
+
+    if (totalMonthBudget > 0) {
+      if (projectedMonth > totalMonthBudget) {
+        insights.push(`Monthly trend: Rs.${monthlySpent.toLocaleString('en-IN')} spent in ${daysIntoMonth} days. Projected Rs.${projectedMonth.toLocaleString('en-IN')} — exceeds budget by Rs.${(projectedMonth - totalMonthBudget).toLocaleString('en-IN')}.`);
+        if (daysLeftMonth > 0) {
+          insights.push(`Reduce daily spending to Rs.${safeDailyMonth.toLocaleString('en-IN')}/day to stay within Rs.${totalMonthBudget.toLocaleString('en-IN')} budget.`);
+        }
+      } else {
+        insights.push(`Monthly spending is within budget. Safe to spend Rs.${safeDailyMonth.toLocaleString('en-IN')}/day.`);
       }
     }
 
     // Category-specific warnings
     for (const cp of categoryPredictions) {
-      if (cp.monthly.status === 'will_exceed') {
-        insights.push(`${cp.category.charAt(0).toUpperCase() + cp.category.slice(1)} expenses may exceed the monthly budget by end of month.`);
+      const catName = cp.category.charAt(0).toUpperCase() + cp.category.slice(1);
+      if (cp.weekly.status === 'will_exceed' && cp.weekly.budget_limit) {
+        const over = cp.weekly.projected - cp.weekly.budget_limit;
+        insights.push(`${catName} may exceed weekly budget by Rs.${over.toLocaleString('en-IN')}.`);
       }
-      if (cp.weekly.status === 'will_exceed') {
-        insights.push(`${cp.category.charAt(0).toUpperCase() + cp.category.slice(1)} expenses may exceed the weekly budget by end of week.`);
+      if (cp.monthly.status === 'will_exceed' && cp.monthly.budget_limit) {
+        const over = cp.monthly.projected - cp.monthly.budget_limit;
+        insights.push(`${catName} may exceed monthly budget by Rs.${over.toLocaleString('en-IN')}.`);
       }
     }
 
@@ -290,6 +306,9 @@ export class AnalyticsService {
           daily_rate: Math.round(dailyRateWeek),
           days_elapsed: daysIntoWeek,
           days_remaining: daysLeftWeek,
+          budget: totalWeekBudget || null,
+          remaining_budget: totalWeekBudget > 0 ? weekRemaining : null,
+          safe_daily_limit: totalWeekBudget > 0 ? safeDailyWeek : null,
           period: `${weekStartStr} to ${weekEndStr}`,
         },
         monthly: {
@@ -298,6 +317,9 @@ export class AnalyticsService {
           daily_rate: Math.round(dailyRateMonth),
           days_elapsed: daysIntoMonth,
           days_remaining: daysLeftMonth,
+          budget: totalMonthBudget || null,
+          remaining_budget: totalMonthBudget > 0 ? monthRemaining : null,
+          safe_daily_limit: totalMonthBudget > 0 ? safeDailyMonth : null,
           period: `${monthStartStr} to ${monthEndStr}`,
         },
       },
