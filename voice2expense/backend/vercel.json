@@ -11,9 +11,5 @@
       "src": "/(.*)",
       "dest": "src/main.ts"
     }
-  ],
-  "deploymentProtection": {
-    "production": "none",
-    "preview": "none"
-  }
+  ]
 }
