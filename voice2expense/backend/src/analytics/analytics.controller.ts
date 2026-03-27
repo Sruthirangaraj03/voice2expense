@@ -21,4 +21,9 @@ export class AnalyticsController {
   getTrends(@Query('from') from?: string, @Query('to') to?: string) {
     return this.analyticsService.getTrends(DEFAULT_USER_ID, from, to);
   }
+
+  @Get('futuristic')
+  getFuturistic() {
+    return this.analyticsService.getFuturistic(DEFAULT_USER_ID);
+  }
 }
