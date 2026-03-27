@@ -6,6 +6,7 @@ import { AIModule } from './ai/ai.module';
 import { BudgetModule } from './budget/budget.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { PredictionModule } from './prediction/prediction.module';
+import { AdminModule } from './admin/admin.module';
 import { SupabaseModule } from './common/supabase/supabase.module';
 import { HealthController } from './health.controller';
 
@@ -19,6 +20,7 @@ import { HealthController } from './health.controller';
     BudgetModule,
     AnalyticsModule,
     PredictionModule,
+    AdminModule,
   ],
   controllers: [HealthController],
 })

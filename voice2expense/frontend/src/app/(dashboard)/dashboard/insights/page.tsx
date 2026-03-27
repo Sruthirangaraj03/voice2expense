@@ -68,7 +68,7 @@ export default function InsightsPage() {
                 ? "bg-[#E65100] text-white rounded-br-md"
                 : "bg-white text-gray-700 rounded-bl-md shadow-sm"
             }`}>
-              <p className="whitespace-pre-wrap">{msg.content}</p>
+              <p className="whitespace-pre-line">{msg.content.replace(/\*\*/g, "").replace(/\*/g, "")}</p>
               <p className={`text-[10px] mt-1 ${msg.role === "user" ? "text-orange-200" : "text-gray-400"}`}>
                 {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
               </p>

@@ -17,9 +17,13 @@ export interface BudgetStatus {
   category: string;
   month: string;
   limit_amount: number;
+  period_type: "weekly" | "monthly";
+  period_start: string;
+  period_end: string;
   used_amount: number;
   remaining: number;
   status: "on_track" | "warning" | "exceeded";
+  is_active: boolean;
 }
 
 export interface AnalyticsSummary {

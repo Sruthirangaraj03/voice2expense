@@ -36,6 +36,12 @@ export class AuthService {
     const { data, error } = await client.auth.signInWithPassword({ email, password });
     if (error) throw new UnauthorizedException('Invalid credentials');
 
+    // Update last_login_at
+    await client
+      .from('users')
+      .update({ last_login_at: new Date().toISOString() })
+      .eq('id', data.user.id);
+
     const { data: profile } = await client
       .from('users')
       .select('*')

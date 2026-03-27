@@ -93,10 +93,10 @@ export default function DashboardLayout({
         {/* Sidebar footer */}
         <div className="px-4 py-4 border-t border-gray-50">
           <Link
-            href="/dashboard"
+            href="/dashboard?record=true"
             className="flex items-center justify-center gap-2 w-full py-3 bg-[#E65100] text-white rounded-xl text-sm font-semibold hover:bg-[#BF360C] transition"
           >
-            <span>🎙️</span> Start Voice Log
+            Start Voice Log
           </Link>
         </div>
       </aside>

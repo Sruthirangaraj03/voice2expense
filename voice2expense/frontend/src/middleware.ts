@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const publicPaths = ['/', '/login', '/register'];
+const publicPaths = ['/', '/login', '/register', '/admin/login'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -20,9 +20,16 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // For protected routes, check for token in cookie or redirect to login
-  // Note: Since we use localStorage for tokens (client-side),
-  // middleware can only check for a marker cookie
+  // Admin routes: check for admin_session cookie
+  if (pathname.startsWith('/admin')) {
+    const hasAdmin = request.cookies.get('admin_session');
+    if (!hasAdmin) {
+      return NextResponse.redirect(new URL('/admin/login', request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // Dashboard routes: check for user session
   const hasSession = request.cookies.get('has_session');
   if (!hasSession && pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/login', request.url));

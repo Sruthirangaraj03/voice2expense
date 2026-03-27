@@ -23,6 +23,11 @@ export class BudgetController {
     return this.budgetService.getStatus(DEFAULT_USER_ID, month);
   }
 
+  @Get('history')
+  getHistory() {
+    return this.budgetService.getHistory(DEFAULT_USER_ID);
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.budgetService.remove(DEFAULT_USER_ID, id);
