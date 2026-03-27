@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import type { AnalyticsSummary, CategoryBreakdown, Expense } from "@/types";
@@ -19,6 +19,14 @@ const categoryIcons: Record<string, string> = {
 };
 
 export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="p-4 text-center text-gray-400">Loading...</div>}>
+      <DashboardContent />
+    </Suspense>
+  );
+}
+
+function DashboardContent() {
   const searchParams = useSearchParams();
   const autoRecord = searchParams.get("record") === "true";
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
