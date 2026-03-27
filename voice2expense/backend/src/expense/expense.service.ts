@@ -15,7 +15,32 @@ export class ExpenseService {
       .single();
 
     if (error) throw new Error(error.message);
-    return data;
+
+    // Check budget remaining for this category
+    let budget_alert: { category: string; remaining: number; limit: number; period_type: string } | null = null;
+    try {
+      const { data: budgets } = await client
+        .from('budget_status')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('category', dto.category)
+        .eq('is_active', true);
+
+      if (budgets && budgets.length > 0) {
+        const b = budgets[0];
+        const remaining = Number(b.limit_amount) - Number(b.used_amount);
+        budget_alert = {
+          category: dto.category,
+          remaining: Math.max(0, Math.round(remaining)),
+          limit: Number(b.limit_amount),
+          period_type: String(b.period_type),
+        };
+      }
+    } catch {
+      // silently skip budget check
+    }
+
+    return { ...data, budget_alert };
   }
 
   async findAll(userId: string, query: QueryExpensesDto) {

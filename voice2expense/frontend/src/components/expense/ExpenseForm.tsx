@@ -35,8 +35,17 @@ export function ExpenseForm({ expense, onSuccess, onCancel }: ExpenseFormProps) 
         await api.put(`/api/expenses/${expense.id}`, payload);
         toast.success("Updated!");
       } else {
-        await api.post("/api/expenses", payload);
+        const res = await api.post("/api/expenses", payload);
         toast.success("Added!");
+        if (res.budget_alert) {
+          const a = res.budget_alert;
+          const remaining = Number(a.remaining);
+          if (remaining <= 0) {
+            setTimeout(() => toast.error(`You've exceeded your ${a.period_type} ${a.category} budget of Rs.${Number(a.limit).toLocaleString("en-IN")}!`), 500);
+          } else {
+            setTimeout(() => toast(`Rs.${remaining.toLocaleString("en-IN")} remaining to spend on ${a.category}`, { duration: 4000 }), 500);
+          }
+        }
       }
       onSuccess();
     } catch {

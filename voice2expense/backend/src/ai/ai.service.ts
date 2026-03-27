@@ -104,10 +104,16 @@ export class AIService {
       saved.push(expense);
     }
 
+    // Collect budget alerts from saved expenses
+    const budget_alerts = saved
+      .map((s: any) => s.budget_alert)
+      .filter(Boolean);
+
     return {
       transcription: transcript,
       entries,
       saved_count: saved.length,
+      budget_alerts,
     };
   }
 

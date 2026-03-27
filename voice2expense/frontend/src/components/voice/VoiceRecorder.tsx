@@ -98,6 +98,21 @@ export function VoiceRecorder({ onSuccess, autoStart }: VoiceRecorderProps) {
 
       const count = res.saved_count || 1;
       toast.success(`${count} expense${count > 1 ? "s" : ""} added!`);
+
+      // Show budget remaining notifications
+      if (res.budget_alerts && res.budget_alerts.length > 0) {
+        for (const a of res.budget_alerts) {
+          const remaining = Number(a.remaining);
+          setTimeout(() => {
+            if (remaining <= 0) {
+              toast.error(`You've exceeded your ${a.period_type} ${a.category} budget of Rs.${Number(a.limit).toLocaleString("en-IN")}!`);
+            } else {
+              toast(`Rs.${remaining.toLocaleString("en-IN")} remaining to spend on ${a.category}`, { duration: 4000 });
+            }
+          }, 800);
+        }
+      }
+
       onSuccess?.();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
