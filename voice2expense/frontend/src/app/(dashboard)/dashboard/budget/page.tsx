@@ -66,7 +66,7 @@ export default function BudgetPage() {
   const monthlyBudgets = budgets.filter(b => b.period_type === "monthly");
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex items-center justify-end">
         <button onClick={() => setShowForm(!showForm)}
           className="px-4 py-2 bg-[#E65100] text-white rounded-full text-sm font-medium">

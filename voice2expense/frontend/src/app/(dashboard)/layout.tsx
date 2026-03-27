@@ -177,9 +177,9 @@ export default function DashboardLayout({
         </header>
 
         {/* Desktop Header */}
-        <header className="hidden md:flex items-center justify-between px-8 py-4 bg-white border-b border-gray-100">
+        <header className="hidden md:flex items-center justify-between px-8 py-3 bg-white border-b border-gray-100">
           <div>
-            <h1 className="text-xl font-bold text-gray-800">
+            <h1 className="text-lg font-bold text-gray-800">
               {navItems.find((n) => pathname === n.href || (n.href !== "/dashboard" && pathname.startsWith(n.href)))?.label || "Dashboard"}
             </h1>
           </div>
@@ -213,7 +213,7 @@ export default function DashboardLayout({
         </header>
 
         {/* Content */}
-        <main className="flex-1 px-4 md:px-8 py-3 md:py-4 pb-24 md:pb-6 overflow-auto">
+        <main className="flex-1 px-4 md:px-8 py-2 md:py-3 pb-24 md:pb-6 overflow-auto">
           <div className="max-w-4xl mx-auto">{children}</div>
         </main>
       </div>

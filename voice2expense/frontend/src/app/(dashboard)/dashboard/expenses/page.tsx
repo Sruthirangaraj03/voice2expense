@@ -45,7 +45,7 @@ export default function ExpensesPage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex items-center justify-end">
         <button
           onClick={() => { setEditingExpense(null); setShowForm(true); }}
