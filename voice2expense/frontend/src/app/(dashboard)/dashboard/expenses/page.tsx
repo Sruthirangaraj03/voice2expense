@@ -47,7 +47,7 @@ export default function ExpensesPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">Expenses</h2>
+        <h2 className="text-xl font-bold text-gray-900">Expenses</h2>
         <button
           onClick={() => { setEditingExpense(null); setShowForm(true); }}
           className="px-4 py-2 bg-[#E65100] text-white rounded-full text-sm font-medium"
@@ -98,7 +98,7 @@ export default function ExpensesPage() {
                   {categoryIcons[e.category] || "O"}
                 </div>
                 <div>
-                  <p className="font-medium text-sm">{e.description || e.category}</p>
+                  <p className="font-medium text-sm text-gray-900">{e.description || e.category}</p>
                   <p className="text-xs text-gray-400">
                     {e.sub_type && <span className="capitalize text-[#E65100]">{e.sub_type} &middot; </span>}
                     {e.date} {e.source === "voice" ? "(voice)" : ""}
@@ -106,7 +106,7 @@ export default function ExpensesPage() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <span className="font-semibold">₹{Number(e.amount).toLocaleString("en-IN")}</span>
+                <span className="font-semibold text-gray-900">₹{Number(e.amount).toLocaleString("en-IN")}</span>
                 <button onClick={() => { setEditingExpense(e); setShowForm(true); }} className="text-gray-400 text-xs">Edit</button>
                 <button onClick={() => handleDelete(e.id)} className="text-gray-400 text-xs">X</button>
               </div>

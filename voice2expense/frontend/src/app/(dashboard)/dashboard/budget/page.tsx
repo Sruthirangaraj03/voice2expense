@@ -76,47 +76,62 @@ export default function BudgetPage() {
       </div>
 
       {showForm && (
-        <form onSubmit={handleCreate} className="bg-white rounded-2xl p-5 shadow-sm space-y-4">
-          {/* Period Type Toggle */}
-          <div>
-            <label className="block text-xs text-gray-400 mb-2 uppercase">Budget Period</label>
-            <div className="flex gap-2">
-              <button type="button"
-                onClick={() => setPeriodType("weekly")}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition ${
-                  periodType === "weekly"
-                    ? "bg-[#E65100] text-white"
-                    : "bg-gray-100 text-gray-500"
-                }`}>
-                Weekly
-              </button>
-              <button type="button"
-                onClick={() => setPeriodType("monthly")}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition ${
-                  periodType === "monthly"
-                    ? "bg-[#E65100] text-white"
-                    : "bg-gray-100 text-gray-500"
-                }`}>
-                Monthly
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4" onClick={() => setShowForm(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 pt-6 pb-2">
+              <h3 className="text-lg font-bold text-gray-900">Set Budget</h3>
+              <button onClick={() => setShowForm(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
+            <form onSubmit={handleCreate} className="px-6 pb-6 pt-2 space-y-4">
+              {/* Period Type Toggle */}
+              <div>
+                <label className="block text-xs text-gray-500 mb-2 uppercase font-medium">Budget Period</label>
+                <div className="flex gap-2">
+                  <button type="button"
+                    onClick={() => setPeriodType("weekly")}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition ${
+                      periodType === "weekly"
+                        ? "bg-[#E65100] text-white"
+                        : "bg-gray-100 text-gray-900"
+                    }`}>
+                    Weekly
+                  </button>
+                  <button type="button"
+                    onClick={() => setPeriodType("monthly")}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition ${
+                      periodType === "monthly"
+                        ? "bg-[#E65100] text-white"
+                        : "bg-gray-100 text-gray-900"
+                    }`}>
+                    Monthly
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1.5 uppercase font-medium">Category</label>
+                <select value={category} onChange={(e) => setCategory(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-gray-50 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#E65100]/20">
+                  {categories.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1.5 uppercase font-medium">
+                  {periodType === "weekly" ? "Weekly" : "Monthly"} Limit (INR)
+                </label>
+                <input type="number" value={limitAmount} onChange={(e) => setLimitAmount(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-gray-50 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#E65100]/20" min="1" required />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 hover:bg-gray-50 transition">Cancel</button>
+                <button type="submit" className="flex-1 py-3 bg-[#E65100] text-white rounded-xl font-medium hover:bg-[#BF360C] transition">Save Budget</button>
+              </div>
+            </form>
           </div>
-          <div>
-            <label className="block text-xs text-gray-400 mb-1 uppercase">Category</label>
-            <select value={category} onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2.5 bg-gray-50 rounded-xl text-sm">
-              {categories.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs text-gray-400 mb-1 uppercase">
-              {periodType === "weekly" ? "Weekly" : "Monthly"} Limit (INR)
-            </label>
-            <input type="number" value={limitAmount} onChange={(e) => setLimitAmount(e.target.value)}
-              className="w-full px-3 py-2.5 bg-gray-50 rounded-xl text-sm" min="1" required />
-          </div>
-          <button type="submit" className="w-full py-3 bg-[#E65100] text-white rounded-xl font-medium">Save Budget</button>
-        </form>
+        </div>
       )}
 
       {loading ? (
