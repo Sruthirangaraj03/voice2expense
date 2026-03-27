@@ -31,7 +31,6 @@ interface OverallPeriod {
 }
 
 interface FuturisticData {
-  today: string;
   overall: { weekly: OverallPeriod; monthly: OverallPeriod };
   categories: CategoryPrediction[];
   insights: string[];
@@ -48,8 +47,6 @@ const categoryColors: Record<string, string> = {
 export default function FuturisticPage() {
   const [data, setData] = useState<FuturisticData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<"monthly" | "weekly">("weekly");
-  const [selectedCat, setSelectedCat] = useState<string>("all");
 
   useEffect(() => {
     (async () => {
@@ -57,7 +54,7 @@ export default function FuturisticPage() {
         const res = await api.get("/api/analytics/futuristic");
         setData(res);
       } catch {
-        console.error("Failed to fetch predictions");
+        console.error("Failed");
       } finally {
         setLoading(false);
       }
@@ -67,7 +64,7 @@ export default function FuturisticPage() {
   if (loading) {
     return (
       <div className="space-y-3">
-        {[...Array(4)].map((_, i) => <div key={i} className="h-24 bg-white rounded-2xl animate-pulse" />)}
+        {[...Array(3)].map((_, i) => <div key={i} className="h-28 bg-white rounded-2xl animate-pulse" />)}
       </div>
     );
   }
@@ -76,224 +73,151 @@ export default function FuturisticPage() {
     return (
       <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
         <p className="text-gray-900 font-semibold">Could not load predictions</p>
-        <p className="text-sm text-gray-400 mt-1">Please try again later</p>
       </div>
     );
   }
 
-  const o = view === "monthly" ? data.overall.monthly : data.overall.weekly;
-  const periodLabel = view === "monthly" ? "Month" : "Week";
-  const totalDays = o.days_elapsed + o.days_remaining;
-  const spentPct = o.budget ? Math.min(Math.round((o.spent / o.budget) * 100), 100) : 0;
-  const projectedPct = o.budget ? Math.round((o.projected / o.budget) * 100) : 0;
-  const isOver = o.budget ? o.projected > o.budget : false;
-
-  const filteredCats = selectedCat === "all"
-    ? data.categories
-    : data.categories.filter(c => c.category === selectedCat);
+  const w = data.overall.weekly;
+  const hasBudget = w.budget !== null && w.budget > 0;
+  const isOver = hasBudget && w.projected > w.budget!;
+  const alreadyOver = hasBudget && w.spent > w.budget!;
 
   return (
     <div className="space-y-3">
-      {/* Period Toggle */}
-      <div className="flex gap-2">
-        <button onClick={() => setView("weekly")}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition ${view === "weekly" ? "bg-[#E65100] text-white" : "bg-white text-gray-900 shadow-sm"}`}>
-          Weekly
-        </button>
-        <button onClick={() => setView("monthly")}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition ${view === "monthly" ? "bg-[#E65100] text-white" : "bg-white text-gray-900 shadow-sm"}`}>
-          Monthly
-        </button>
+
+      {/* Main Card — Simple estimation */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm">
+        <p className="text-gray-400 text-xs uppercase font-medium mb-3">This week&apos;s estimate</p>
+
+        <p className="text-gray-900 text-sm leading-relaxed">
+          You spent <span className="font-bold text-[#E65100]">{fmt(w.spent)}</span> in {w.days_elapsed} day{w.days_elapsed !== 1 && "s"}.
+        </p>
+
+        <p className="text-gray-900 text-2xl font-bold mt-2">
+          {alreadyOver ? (
+            <>You already crossed your {fmt(w.budget!)} budget</>
+          ) : (
+            <>You&apos;d spend <span className={isOver ? "text-red-600" : "text-green-600"}>{fmt(w.projected)}</span> by Sunday</>
+          )}
+        </p>
+
+        {hasBudget && (
+          <div className="mt-4">
+            {/* Budget bar */}
+            <div className="flex justify-between text-[10px] text-gray-400 mb-1">
+              <span>{fmt(w.spent)} spent</span>
+              <span>{fmt(w.budget!)} budget</span>
+            </div>
+            <div className="relative w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: `${Math.min(Math.round((w.spent / w.budget!) * 100), 100)}%`,
+                  backgroundColor: alreadyOver ? "#DC2626" : isOver ? "#F59E0B" : "#22C55E",
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Budget vs Spending Card */}
-      {o.budget ? (
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
-          <div className="grid grid-cols-3 gap-3 text-center mb-4">
-            <div>
-              <p className="text-[10px] text-gray-400 uppercase font-medium">Budget</p>
-              <p className="text-lg font-bold text-gray-900">{fmt(o.budget)}</p>
-            </div>
-            <div>
-              <p className="text-[10px] text-gray-400 uppercase font-medium">Spent</p>
-              <p className="text-lg font-bold text-[#E65100]">{fmt(o.spent)}</p>
-            </div>
-            <div>
-              <p className="text-[10px] text-gray-400 uppercase font-medium">You&apos;d spend</p>
-              <p className={`text-lg font-bold ${isOver ? "text-red-600" : "text-green-600"}`}>{fmt(o.projected)}</p>
-            </div>
-          </div>
-
-          {/* Budget progress */}
-          <div className="mb-4">
-            <div className="relative w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-              <div className="absolute h-full rounded-full bg-[#E65100] transition-all" style={{ width: `${spentPct}%` }} />
-              {projectedPct > spentPct && (
-                <div className="absolute h-full rounded-full transition-all opacity-30"
-                  style={{ left: `${spentPct}%`, width: `${Math.min(projectedPct - spentPct, 100 - spentPct)}%`, backgroundColor: isOver ? "#DC2626" : "#E65100" }} />
-              )}
-            </div>
-            <div className="flex justify-between text-[10px] text-gray-400 mt-1">
-              <span>{spentPct}% spent</span>
-              <span>{projectedPct}% projected</span>
-            </div>
-          </div>
-
-          {/* Key numbers */}
-          <div className="grid grid-cols-3 gap-2">
-            <div className="bg-gray-50 rounded-xl p-3 text-center">
-              <p className="text-[10px] text-gray-400 uppercase">You spend</p>
-              <p className="font-bold text-gray-900 text-sm">{fmt(o.daily_rate)}/day</p>
-            </div>
-            <div className={`rounded-xl p-3 text-center ${isOver ? "bg-red-50" : "bg-green-50"}`}>
-              <p className="text-[10px] text-gray-400 uppercase">Safe limit</p>
-              <p className={`font-bold text-sm ${isOver ? "text-red-600" : "text-green-600"}`}>
-                {o.safe_daily_limit !== null ? `${fmt(o.safe_daily_limit)}/day` : "-"}
+      {/* Action Card — What to do */}
+      {hasBudget && w.days_remaining > 0 && (
+        <div className={`rounded-2xl p-5 shadow-sm ${isOver || alreadyOver ? "bg-red-50" : "bg-green-50"}`}>
+          {alreadyOver ? (
+            <>
+              <p className={`font-bold text-red-700`}>
+                You&apos;re Rs.{(w.spent - w.budget!).toLocaleString("en-IN")} over budget
               </p>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-3 text-center">
-              <p className="text-[10px] text-gray-400 uppercase">{o.days_remaining}d left</p>
-              <p className="font-bold text-gray-900 text-sm">
-                {o.remaining_budget !== null ? fmt(o.remaining_budget) : "-"}
+              <p className="text-sm text-red-600 mt-1">
+                Try not to spend for the remaining {w.days_remaining} day{w.days_remaining !== 1 && "s"} to limit the damage.
               </p>
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* No budget set — show basic projection */
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
-          <p className="text-xs text-gray-400 mb-1">You spent {fmt(o.spent)} in {o.days_elapsed} days</p>
-          <p className="text-sm text-gray-900 font-semibold mb-3">
-            At this rate, you would spend <span className="text-[#E65100] text-xl font-bold">{fmt(o.projected)}</span> by end of the {periodLabel.toLowerCase()}
-          </p>
-          <div className="bg-gray-50 rounded-xl p-3 text-center">
-            <p className="text-xs text-gray-400">Your spending rate: <span className="font-bold text-gray-900">{fmt(o.daily_rate)}/day</span> with {o.days_remaining} days remaining</p>
-          </div>
+            </>
+          ) : isOver ? (
+            <>
+              <p className="font-bold text-red-700">
+                Reduce to {fmt(w.safe_daily_limit!)}/day to stay within budget
+              </p>
+              <p className="text-sm text-red-600 mt-1">
+                You have {fmt(w.remaining_budget!)} left for {w.days_remaining} day{w.days_remaining !== 1 && "s"}. Currently spending {fmt(w.daily_rate)}/day.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="font-bold text-green-700">
+                You&apos;re on track — {fmt(w.safe_daily_limit!)}/day is safe
+              </p>
+              <p className="text-sm text-green-600 mt-1">
+                {fmt(w.remaining_budget!)} left for {w.days_remaining} day{w.days_remaining !== 1 && "s"}.
+              </p>
+            </>
+          )}
         </div>
       )}
 
-      {/* Insights */}
-      {data.insights.length > 0 && (
-        <div className="space-y-2">
-          {data.insights.map((insight, i) => {
-            const isWarn = insight.includes("exceed") || insight.includes("Reduce") || insight.includes("limit spending");
-            const isGood = insight.includes("on track") || insight.includes("within budget") || insight.includes("Safe to");
-            return (
-              <div key={i}
-                className={`px-4 py-3 rounded-2xl text-sm flex items-start gap-3 ${
-                  isWarn ? "bg-red-50 text-red-700" : isGood ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700"
-                }`}>
-                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  {isWarn ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  )}
-                </svg>
-                <span>{insight}</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Category Filter - horizontal scroll */}
+      {/* Category Breakdown — simple list */}
       {data.categories.length > 0 && (
-        <>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            <button onClick={() => setSelectedCat("all")}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition ${
-                selectedCat === "all" ? "bg-[#E65100] text-white" : "bg-white text-gray-900 shadow-sm"
-              }`}>
-              All Categories
-            </button>
-            {data.categories.map((cat) => (
-              <button key={cat.category} onClick={() => setSelectedCat(cat.category)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap capitalize transition ${
-                  selectedCat === cat.category ? "bg-[#E65100] text-white" : "bg-white text-gray-900 shadow-sm"
-                }`}>
-                {cat.category}
-              </button>
-            ))}
-          </div>
-
-          {/* Category Cards */}
-          <div className="space-y-2">
-            {filteredCats.map((cat) => {
-              const c = view === "monthly" ? cat.monthly : cat.weekly;
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <p className="px-5 py-3 text-xs text-gray-400 uppercase font-medium border-b border-gray-50">
+            Category breakdown
+          </p>
+          <div className="divide-y divide-gray-50">
+            {data.categories.map((cat) => {
+              const c = cat.weekly;
               const color = categoryColors[cat.category] || "#546E7A";
-              const hasBudget = c.budget_limit !== null && c.budget_limit > 0;
-              const pct = hasBudget ? Math.round((c.spent / c.budget_limit!) * 100) : null;
-              const projPct = hasBudget ? Math.round((c.projected / c.budget_limit!) * 100) : null;
-              const willExceed = c.status === "will_exceed";
-              const isWarning = c.status === "warning";
+              const hasCatBudget = c.budget_limit !== null && c.budget_limit > 0;
+              const catOver = hasCatBudget && c.projected > c.budget_limit!;
+              const pct = hasCatBudget ? Math.min(Math.round((c.spent / c.budget_limit!) * 100), 100) : null;
 
               return (
-                <div key={cat.category} className="bg-white rounded-2xl p-4 shadow-sm">
-                  <div className="flex items-center justify-between mb-3">
+                <div key={cat.category} className="px-5 py-4">
+                  <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold"
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold"
                         style={{ backgroundColor: `${color}15`, color }}>
                         {cat.category.charAt(0).toUpperCase()}
                       </div>
-                      <p className="font-semibold text-gray-900 capitalize">{cat.category}</p>
-                    </div>
-                    {c.status && (
-                      <span className={`text-[10px] px-2.5 py-1 rounded-full font-medium ${
-                        willExceed ? "bg-red-50 text-red-600" : isWarning ? "bg-amber-50 text-amber-600" : "bg-green-50 text-green-600"
-                      }`}>
-                        {willExceed ? "Will Exceed" : isWarning ? "Warning" : "On Track"}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className={`grid ${hasBudget ? "grid-cols-4" : "grid-cols-3"} gap-2 text-center mb-3`}>
-                    <div>
-                      <p className="text-[10px] text-gray-400">Spent</p>
-                      <p className="font-bold text-sm text-gray-900">{fmt(c.spent)}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-gray-400">Rate</p>
-                      <p className="font-bold text-sm text-gray-900">{fmt(c.daily_rate)}/d</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-gray-400">Projected</p>
-                      <p className={`font-bold text-sm ${willExceed ? "text-red-600" : "text-gray-900"}`}>{fmt(c.projected)}</p>
-                    </div>
-                    {hasBudget && (
                       <div>
-                        <p className="text-[10px] text-gray-400">Budget</p>
-                        <p className="font-bold text-sm text-gray-900">{fmt(c.budget_limit!)}</p>
+                        <p className="font-semibold text-gray-900 capitalize text-sm">{cat.category}</p>
+                        <p className="text-[11px] text-gray-400">{fmt(c.daily_rate)}/day</p>
                       </div>
-                    )}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-sm text-gray-900">{fmt(c.spent)}</p>
+                      {hasCatBudget && (
+                        <p className={`text-[11px] ${catOver ? "text-red-500" : "text-green-500"}`}>
+                          → {fmt(c.projected)} of {fmt(c.budget_limit!)}
+                        </p>
+                      )}
+                      {!hasCatBudget && c.projected > 0 && (
+                        <p className="text-[11px] text-gray-400">→ {fmt(c.projected)} est.</p>
+                      )}
+                    </div>
                   </div>
 
-                  {hasBudget && pct !== null && projPct !== null && (
-                    <div className="mb-2">
-                      <div className="relative w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="absolute h-full rounded-full transition-all"
-                          style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: willExceed ? "#DC2626" : isWarning ? "#F59E0B" : "#22C55E" }} />
+                  {hasCatBudget && pct !== null && (
+                    <div className="mt-2">
+                      <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all"
+                          style={{
+                            width: `${pct}%`,
+                            backgroundColor: catOver ? "#DC2626" : pct > 80 ? "#F59E0B" : "#22C55E",
+                          }}
+                        />
                       </div>
-                      <p className="text-[10px] text-gray-400 mt-0.5">{pct}% used — {projPct}% projected</p>
                     </div>
-                  )}
-
-                  {c.insight && (
-                    <p className={`text-xs ${willExceed ? "text-red-500" : isWarning ? "text-amber-500" : "text-green-500"}`}>
-                      {c.insight}
-                    </p>
                   )}
                 </div>
               );
             })}
           </div>
-        </>
+        </div>
       )}
 
       {data.categories.length === 0 && (
         <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
-          <p className="font-semibold text-gray-900">No expense data yet</p>
-          <p className="text-sm text-gray-400 mt-1">Add expenses to see spending predictions</p>
+          <p className="font-semibold text-gray-900">No expenses this week</p>
+          <p className="text-sm text-gray-400 mt-1">Add expenses to see predictions</p>
         </div>
       )}
     </div>
