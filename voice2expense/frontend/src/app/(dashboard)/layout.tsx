@@ -68,14 +68,19 @@ export default function DashboardLayout({
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-    fetch("/api/analytics/notifications", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => r.json())
-      .then((data) => { if (Array.isArray(data)) setNotifications(data); })
-      .catch(() => {});
+    const fetchNotifs = () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      fetch("/api/analytics/notifications", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((r) => r.json())
+        .then((data) => { if (Array.isArray(data)) setNotifications(data); })
+        .catch(() => {});
+    };
+    fetchNotifs();
+    const interval = setInterval(fetchNotifs, 30000);
+    return () => clearInterval(interval);
   }, [pathname]);
 
   useEffect(() => {
