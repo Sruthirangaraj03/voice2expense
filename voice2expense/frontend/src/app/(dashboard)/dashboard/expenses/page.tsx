@@ -62,7 +62,12 @@ export default function ExpensesPage() {
       </div>
 
       <div className="flex items-center justify-between">
-        <p className="text-xs text-gray-400">{expenses.length} expenses</p>
+        <p className="text-sm text-gray-900">
+          <span className="text-gray-400 text-xs">Spent: </span>
+          <span className="font-bold">₹{expenses.reduce((s, e) => s + Number(e.amount), 0).toLocaleString("en-IN")}</span>
+          {filterCategory && <span className="text-xs text-gray-400 ml-1 capitalize">({filterCategory})</span>}
+          {!filterCategory && <span className="text-xs text-gray-400 ml-1">(all)</span>}
+        </p>
         <button
           onClick={() => { setEditingExpense(null); setShowForm(true); }}
           className="px-4 py-2 bg-[#E65100] text-white rounded-lg text-xs font-semibold active:scale-95 transition"
