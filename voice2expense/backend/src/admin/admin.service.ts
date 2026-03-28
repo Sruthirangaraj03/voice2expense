@@ -1,19 +1,24 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from '../common/supabase/supabase.service';
-
-const ADMIN_EMAIL = 'test@digygo.com';
-const ADMIN_PASSWORD = 'Sivaraj';
 
 @Injectable()
 export class AdminService {
+  private readonly adminEmail: string;
+  private readonly adminPassword: string;
+
   constructor(
     private jwt: JwtService,
     private supabase: SupabaseService,
-  ) {}
+    private config: ConfigService,
+  ) {
+    this.adminEmail = this.config.get<string>('ADMIN_EMAIL') || 'admin@voice2expense.com';
+    this.adminPassword = this.config.get<string>('ADMIN_PASSWORD') || '';
+  }
 
   async login(email: string, password: string) {
-    if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
+    if (!this.adminPassword || email !== this.adminEmail || password !== this.adminPassword) {
       throw new UnauthorizedException('Invalid admin credentials');
     }
     const token = this.jwt.sign(
@@ -26,7 +31,7 @@ export class AdminService {
   verifyAdmin(token: string) {
     try {
       const payload = this.jwt.verify(token);
-      if (payload.role !== 'admin' || payload.email !== ADMIN_EMAIL) {
+      if (payload.role !== 'admin' || payload.email !== this.adminEmail) {
         throw new UnauthorizedException('Not an admin');
       }
       return payload;

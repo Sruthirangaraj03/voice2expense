@@ -23,11 +23,11 @@ export class LlmService {
     const yesterdayDate = yesterday.toISOString().split('T')[0];
 
     const response = await this.openai.chat.completions.create({
-      model: 'gpt-4.1-nano',
+      model: 'gpt-4.1-mini',
       messages: [
         {
           role: 'system',
-          content: `You are an expense parser. Output ONLY valid JSON, nothing else.
+          content: `You are a precise expense parser. Your job is to extract ONLY real expenses from voice transcriptions. Output ONLY valid JSON, nothing else.
 
 If user mentions MULTIPLE expenses, return a JSON ARRAY. If only ONE expense, still return an ARRAY with one item.
 
@@ -37,25 +37,40 @@ Example: "10 for tea and 200 for lunch" → [{"amount":10,"category":"food","sub
 
 Rules:
 - amount: plain number only. If user says "3810 for 15 people" → amount = 254 (auto divide). Never show split math, just the per-person amount.
-- category: one of food, transport, entertainment, shopping, bills, health, education, other (lowercase)
-- sub_type: specific type within category (lowercase). Examples:
-  food → snacks, lunch, breakfast, dinner, tea, coffee, groceries
-  transport → bike, bus, auto, cab, fuel, train, flight
-  entertainment → movie, games, streaming, party
-  shopping → clothes, electronics, gifts, household
-  bills → rent, electricity, phone, internet, water
-  health → medicine, doctor, gym, insurance
-  education → books, course, tuition, exam
-  other → miscellaneous
-- description: brief description. If people count mentioned, include "split among N people" in description
+- category: MUST be one of these 16 categories (lowercase):
+  food, transport, shopping, bills, health, fitness, entertainment, education, grooming, clothing, maintenance, travel, family, investments, donations, other
+- sub_type: specific type within category (lowercase). Use these mappings:
+  food → tea, coffee, breakfast, lunch, dinner, snacks, sweets, juice, tiffin, biryani, dosa, idli, parotta, rice, noodles, pizza, burger, ice-cream, cake, bakery, fruits, dry-fruits, restaurant, zomato, swiggy, canteen, mess, street-food, milkshake, water-bottle
+  transport → auto, bus, train, metro, uber, ola, rapido, cab, petrol, diesel, parking, toll, flight, bike, cycle, ferry, pass, fastag
+  shopping → groceries, vegetables, amazon, flipkart, meesho, household, kitchenware, furniture, decor, bags, watches, jewellery, gifts, toys, stationery
+  bills → electricity, water, gas, internet, phone, recharge, rent, emi, insurance, subscription, dth, broadband, credit-card, loan, tax, society-fee
+  health → medicine, doctor, hospital, pharmacy, lab-test, dental, eyecare, ayurveda, physiotherapy, surgery, blood-test, x-ray, scan, ambulance, vaccination
+  fitness → gym, yoga, protein, supplements, sports-gear, trainer, swimming, cycling, running-shoes, mat, membership
+  entertainment → movie, netflix, spotify, hotstar, youtube-premium, games, outing, party, concert, sports, pub, bar, amusement-park, tickets, streaming
+  education → fees, books, stationery, course, tuition, coaching, exam, certification, library, printing, laptop, udemy, coursera, workshop, seminar
+  grooming → haircut, salon, spa, facial, makeup, lipstick, foundation, skincare, sunscreen, shampoo, conditioner, perfume, deodorant, shaving, waxing, threading, manicure, pedicure, hair-color, serum, moisturizer, body-wash
+  clothing → shirts, pants, jeans, t-shirts, kurta, saree, dress, shoes, sandals, sneakers, chappals, socks, innerwear, jacket, hoodie, ethnic-wear, kids-wear, tailoring, laundry, dry-clean, ironing
+  maintenance → repair, plumber, electrician, painting, pest-control, cleaning, appliance-service, carpenter, ac-service, ups, inverter, wifi-setup, lock-smith, waterproofing, renovation
+  travel → hotel, resort, homestay, airbnb, booking, trip, vacation, visa, passport, luggage, travel-insurance, sightseeing, guide, food-on-trip
+  family → kids-school, daycare, diapers, baby-food, elderly-care, family-doctor, pocket-money, tuition-kids, school-bus, uniform, birthday
+  investments → sip, mutual-fund, stocks, gold, fd, rd, ppf, nps, crypto, chit-fund, post-office, lic
+  donations → temple, church, mosque, charity, fundraiser, tips, ngo, crowdfunding
+  other → courier, postage, photocopy, passport-photo, notary, misc, lost-money, penalty, fine
+- description: brief description IN ENGLISH ONLY. Even if user speaks Hindi/Tamil/Telugu, always write description in English. If people count mentioned, include "split among N people" in description
 - date: default ${todayDate} if not mentioned. "yesterday" = ${yesterdayDate}, "today" = ${todayDate}, "last week" = 7 days ago
 - confidence: 0 to 1
+- IMPORTANT: All output text (category, sub_type, description) MUST be in English only. Never output Hindi, Tamil, or any other language in the JSON values.
+- IMPORTANT: Amount must be exact. Never round, never guess. If user says "twenty" output 20, if "one fifty" output 150.
+- CRITICAL: Only extract ACTUAL expenses. If the transcription is unclear, garbled, or doesn't contain a clear expense (item + amount), return an EMPTY array []. Do NOT guess or hallucinate.
+- CRITICAL: If you cannot clearly identify BOTH an item AND an amount, skip that entry. Better to miss an expense than to create a wrong one.
+- Ignore filler words, greetings, background noise text. Only focus on "I spent X on Y" or "X rupees for Y" patterns.
+- If transcription says something like "thank you" or random words with no expense, return [].
 
 Output ONLY the JSON array. No explanation.`,
         },
         { role: 'user', content: text },
       ],
-      temperature: 0.1,
+      temperature: 0,
       max_tokens: 1024,
     });
 
@@ -77,9 +92,59 @@ Output ONLY the JSON array. No explanation.`,
     return [parsed];
   }
 
+  async parseBudget(text: string) {
+    this.logger.log(`Parsing budget from text: "${text}"`);
+
+    const response = await this.openai.chat.completions.create({
+      model: 'gpt-4.1-mini',
+      messages: [
+        {
+          role: 'system',
+          content: `You are a budget parser. Output ONLY valid JSON, nothing else.
+
+Parse the user's voice command to extract budget settings. Return a JSON ARRAY of budget objects.
+
+[{"category": "STRING", "period_type": "STRING", "limit_amount": NUMBER}]
+
+Example: "set budget for entertainment 3000" → [{"category":"entertainment","period_type":"monthly","limit_amount":3000}]
+Example: "food budget 2000 weekly" → [{"category":"food","period_type":"weekly","limit_amount":2000}]
+Example: "set 5000 for shopping and 3000 for grooming monthly" → [{"category":"shopping","period_type":"monthly","limit_amount":5000},{"category":"grooming","period_type":"monthly","limit_amount":3000}]
+
+Rules:
+- category: MUST be one of: food, transport, shopping, bills, health, fitness, entertainment, education, grooming, clothing, maintenance, travel, family, investments, donations, other (lowercase)
+- period_type: "weekly" or "monthly". Default to "monthly" if not specified.
+- limit_amount: plain number, the budget limit in INR
+- The user may speak in Hindi, Tamil, Telugu, Kannada, or any Indian language. Understand the intent regardless of language.
+- "budget set karo food ke liye 2000" → category: food, limit_amount: 2000
+- "entertainment ku 3000 budget" → category: entertainment, limit_amount: 3000
+
+Output ONLY the JSON array. No explanation.`,
+        },
+        { role: 'user', content: text },
+      ],
+      temperature: 0,
+      max_tokens: 512,
+    });
+
+    let content = response.choices[0].message.content || '[]';
+    this.logger.log(`Budget LLM response: ${content.substring(0, 300)}`);
+    content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(content);
+    } catch {
+      this.logger.error(`Failed to parse budget LLM response: ${content}`);
+      throw new Error('Failed to parse AI response. Please try again.');
+    }
+
+    if (Array.isArray(parsed)) return parsed;
+    return [parsed];
+  }
+
   async query(question: string, context: string) {
     const response = await this.openai.chat.completions.create({
-      model: 'gpt-4.1-nano',
+      model: 'gpt-4.1-mini',
       messages: [
         {
           role: 'system',
@@ -129,7 +194,7 @@ FORMATTING RULES:
           content: `DATA (source of truth — use ONLY these numbers):\n${context}\n\nQuestion: ${question}`,
         },
       ],
-      temperature: 0.1,
+      temperature: 0,
       max_tokens: 512,
     });
 

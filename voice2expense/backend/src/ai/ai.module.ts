@@ -5,9 +5,10 @@ import { SttService } from './stt.service';
 import { LlmService } from './llm.service';
 import { ExpenseModule } from '../expense/expense.module';
 import { BudgetModule } from '../budget/budget.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [ExpenseModule, BudgetModule],
+  imports: [ExpenseModule, BudgetModule, AuthModule],
   controllers: [AIController],
   providers: [AIService, SttService, LlmService],
   exports: [AIService],

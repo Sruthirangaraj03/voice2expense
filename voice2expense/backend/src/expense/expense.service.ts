@@ -45,7 +45,8 @@ export class ExpenseService {
 
   async findAll(userId: string, query: QueryExpensesDto) {
     const client = this.supabase.getClient();
-    const { page = 1, limit = 20, category, from, to, sort = 'date:desc' } = query;
+    const { page = 1, limit: rawLimit = 20, category, from, to, sort = 'date:desc' } = query;
+    const limit = Math.min(rawLimit, 100);
 
     let qb = client
       .from('expenses')

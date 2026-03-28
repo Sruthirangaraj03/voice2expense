@@ -2,7 +2,7 @@ import { IsString, IsNumber, IsDateString, IsOptional, Min, Max, IsIn } from 'cl
 
 export class CreateBudgetDto {
   @IsString()
-  @IsIn(['food', 'transport', 'entertainment', 'shopping', 'bills', 'health', 'education', 'other'])
+  @IsIn(['food', 'transport', 'shopping', 'bills', 'health', 'fitness', 'entertainment', 'education', 'grooming', 'clothing', 'maintenance', 'travel', 'family', 'investments', 'donations', 'other'])
   category: string;
 
   @IsString()

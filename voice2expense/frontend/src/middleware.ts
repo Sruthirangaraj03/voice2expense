@@ -1,17 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const publicPaths = ['/', '/login', '/register', '/admin/login'];
-
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const hasSession = request.cookies.get('has_session');
 
-  // Allow public paths
-  if (publicPaths.includes(pathname)) {
-    return NextResponse.next();
-  }
-
-  // Allow static files and API routes
+  // Allow static files and API routes always
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
@@ -20,17 +14,25 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Admin routes: check for admin_session cookie
-  if (pathname.startsWith('/admin')) {
-    const hasAdmin = request.cookies.get('admin_session');
-    if (!hasAdmin) {
-      return NextResponse.redirect(new URL('/admin/login', request.url));
-    }
+  // Allow auth callback always
+  if (pathname === '/auth/callback') {
     return NextResponse.next();
   }
 
-  // Dashboard routes: check for user session
-  const hasSession = request.cookies.get('has_session');
+  // Admin routes
+  if (pathname.startsWith('/admin')) {
+    if (pathname === '/admin/login') return NextResponse.next();
+    const hasAdmin = request.cookies.get('admin_session');
+    if (!hasAdmin) return NextResponse.redirect(new URL('/admin/login', request.url));
+    return NextResponse.next();
+  }
+
+  // If logged in and visiting landing/login/register → send to dashboard
+  if (hasSession && (pathname === '/' || pathname === '/login' || pathname === '/register')) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  // If NOT logged in and visiting dashboard → send to login
   if (!hasSession && pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/login', request.url));
   }

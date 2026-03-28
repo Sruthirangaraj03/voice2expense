@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import type { Expense } from "@/types";
 
-const categories = ["food", "transport", "entertainment", "shopping", "bills", "health", "education", "other"];
+const categories = ["food", "transport", "shopping", "bills", "health", "fitness", "entertainment", "education", "grooming", "clothing", "maintenance", "travel", "family", "investments", "donations", "other"];
 
 interface ExpenseFormProps {
   expense?: Expense | null;
@@ -56,8 +56,8 @@ export function ExpenseForm({ expense, onSuccess, onCancel }: ExpenseFormProps) 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4" onClick={onCancel}>
-      <div className="bg-white rounded-2xl w-full max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 px-4" onClick={onCancel}>
+      <div className="bg-white rounded-2xl w-full max-w-sm mb-4 sm:mb-0 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 pt-6 pb-2">
           <h3 className="text-lg font-bold text-gray-900">{expense ? "Edit Expense" : "Add Expense"}</h3>
           <button onClick={onCancel} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition">

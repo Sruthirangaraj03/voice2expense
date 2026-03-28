@@ -64,10 +64,44 @@ export class AuthService {
     return data;
   }
 
+  async googleLogin(supabaseUserId: string, email: string, name: string) {
+    const client = this.supabase.getClient();
+
+    // Check if user already exists in our users table
+    const { data: existing } = await client
+      .from('users')
+      .select('*')
+      .eq('id', supabaseUserId)
+      .maybeSingle();
+
+    if (!existing) {
+      // Create user profile
+      const { error } = await client
+        .from('users')
+        .insert({ id: supabaseUserId, email, name });
+      if (error) throw new UnauthorizedException(error.message);
+    } else {
+      // Update last login
+      await client
+        .from('users')
+        .update({ last_login_at: new Date().toISOString() })
+        .eq('id', supabaseUserId);
+    }
+
+    const { data: profile } = await client
+      .from('users')
+      .select('*')
+      .eq('id', supabaseUserId)
+      .single();
+
+    const tokens = this.generateTokens(supabaseUserId, email);
+    return { user: profile, ...tokens };
+  }
+
   generateTokens(userId: string, email: string) {
     return {
       access_token: this.jwt.sign({ sub: userId, email, type: 'access' }),
-      refresh_token: this.jwt.sign({ sub: userId, email, type: 'refresh' }, { expiresIn: '7d' }),
+      refresh_token: this.jwt.sign({ sub: userId, email, type: 'refresh' }),
     };
   }
 

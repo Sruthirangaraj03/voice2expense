@@ -8,7 +8,7 @@ export class CreateExpenseDto {
   amount: number;
 
   @IsString()
-  @IsIn(['food', 'transport', 'entertainment', 'shopping', 'bills', 'health', 'education', 'other'])
+  @IsIn(['food', 'transport', 'shopping', 'bills', 'health', 'fitness', 'entertainment', 'education', 'grooming', 'clothing', 'maintenance', 'travel', 'family', 'investments', 'donations', 'other'])
   category: string;
 
   @IsString()
@@ -36,7 +36,7 @@ export class UpdateExpenseDto {
   amount?: number;
 
   @IsString()
-  @IsIn(['food', 'transport', 'entertainment', 'shopping', 'bills', 'health', 'education', 'other'])
+  @IsIn(['food', 'transport', 'shopping', 'bills', 'health', 'fitness', 'entertainment', 'education', 'grooming', 'clothing', 'maintenance', 'travel', 'family', 'investments', 'donations', 'other'])
   @IsOptional()
   category?: string;
 

@@ -18,6 +18,11 @@ export class AuthController {
     return this.authService.login(dto.email, dto.password);
   }
 
+  @Post('google')
+  google(@Body() body: { id: string; email: string; name: string }) {
+    return this.authService.googleLogin(body.id, body.email, body.name);
+  }
+
   @Post('refresh')
   refresh(@Body() dto: RefreshDto) {
     return this.authService.refreshToken(dto.refresh_token);

@@ -1,35 +1,35 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { ExpenseService } from './expense.service';
 import { CreateExpenseDto, UpdateExpenseDto, QueryExpensesDto } from './dto/expense.dto';
 
-const DEFAULT_USER_ID = '50f6bc48-568f-479e-901d-31eee14511aa';
-
+@UseGuards(AuthGuard('jwt'))
 @Controller('expenses')
 export class ExpenseController {
   constructor(private expenseService: ExpenseService) {}
 
   @Post()
-  create(@Body() dto: CreateExpenseDto) {
-    return this.expenseService.create(DEFAULT_USER_ID, dto);
+  create(@Request() req: any, @Body() dto: CreateExpenseDto) {
+    return this.expenseService.create(req.user.sub, dto);
   }
 
   @Get()
-  findAll(@Query() query: QueryExpensesDto) {
-    return this.expenseService.findAll(DEFAULT_USER_ID, query);
+  findAll(@Request() req: any, @Query() query: QueryExpensesDto) {
+    return this.expenseService.findAll(req.user.sub, query);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.expenseService.findOne(DEFAULT_USER_ID, id);
+  findOne(@Request() req: any, @Param('id') id: string) {
+    return this.expenseService.findOne(req.user.sub, id);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateExpenseDto) {
-    return this.expenseService.update(DEFAULT_USER_ID, id, dto);
+  update(@Request() req: any, @Param('id') id: string, @Body() dto: UpdateExpenseDto) {
+    return this.expenseService.update(req.user.sub, id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.expenseService.remove(DEFAULT_USER_ID, id);
+  remove(@Request() req: any, @Param('id') id: string) {
+    return this.expenseService.remove(req.user.sub, id);
   }
 }

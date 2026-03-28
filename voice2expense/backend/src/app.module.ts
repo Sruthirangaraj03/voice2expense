@@ -9,10 +9,13 @@ import { PredictionModule } from './prediction/prediction.module';
 import { AdminModule } from './admin/admin.module';
 import { SupabaseModule } from './common/supabase/supabase.module';
 import { HealthController } from './health.controller';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
     SupabaseModule,
     AuthModule,
     ExpenseModule,
@@ -23,5 +26,8 @@ import { HealthController } from './health.controller';
     AdminModule,
   ],
   controllers: [HealthController],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}

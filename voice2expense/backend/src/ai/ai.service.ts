@@ -3,8 +3,9 @@ import { SttService } from './stt.service';
 import { LlmService } from './llm.service';
 import { ExpenseService } from '../expense/expense.service';
 import { BudgetService } from '../budget/budget.service';
+import { SupabaseService } from '../common/supabase/supabase.service';
 
-const VALID_CATEGORIES = ['food', 'transport', 'entertainment', 'shopping', 'bills', 'health', 'education', 'other'];
+const VALID_CATEGORIES = ['food', 'transport', 'shopping', 'bills', 'health', 'fitness', 'entertainment', 'education', 'grooming', 'clothing', 'maintenance', 'travel', 'family', 'investments', 'donations', 'other'];
 
 function sanitizeExpense(data: Record<string, unknown>) {
   // Sanitize amount
@@ -49,11 +50,25 @@ export class AIService {
     private llmService: LlmService,
     private expenseService: ExpenseService,
     private budgetService: BudgetService,
+    private supabase: SupabaseService,
   ) {}
 
+  private async updateUserLanguage(userId: string, language: string) {
+    try {
+      if (language && language !== 'en') {
+        await this.supabase.getClient()
+          .from('users')
+          .update({ preferred_language: language })
+          .eq('id', userId);
+      }
+    } catch (err) {
+      this.logger.warn(`Failed to update language for ${userId}: ${err}`);
+    }
+  }
+
   async transcribe(audioBuffer: Buffer, filename: string) {
-    const transcript = await this.sttService.transcribe(audioBuffer, filename);
-    return { transcript };
+    const result = await this.sttService.transcribe(audioBuffer, filename);
+    return { transcript: result.text, text: result.text, language: result.language };
   }
 
   async parseExpense(text: string) {
@@ -69,8 +84,11 @@ export class AIService {
   }
 
   async voiceLog(userId: string, audioBuffer: Buffer, filename: string) {
-    const transcript = await this.sttService.transcribe(audioBuffer, filename);
-    this.logger.log(`Voice transcript: "${transcript}"`);
+    const sttResult = await this.sttService.transcribe(audioBuffer, filename);
+    const transcript = sttResult.text;
+    this.logger.log(`Voice transcript: "${transcript}" | Lang: ${sttResult.language}`);
+
+    this.updateUserLanguage(userId, sttResult.language);
 
     if (!transcript || transcript.trim().length === 0) {
       throw new BadRequestException('Could not understand the audio. Please try again.');
@@ -79,14 +97,20 @@ export class AIService {
     const rawList = await this.llmService.parseExpense(transcript);
     const entries = rawList.map((raw: Record<string, unknown>) => {
       try {
-        return sanitizeExpense(raw);
+        const entry = sanitizeExpense(raw);
+        // Discard low-confidence entries
+        if (entry.confidence < 0.7) {
+          this.logger.warn(`Skipping low-confidence entry: ${JSON.stringify(entry)}`);
+          return null;
+        }
+        return entry;
       } catch {
         return null;
       }
     }).filter(Boolean);
 
     if (entries.length === 0) {
-      throw new BadRequestException('Could not extract any expense from your speech.');
+      throw new BadRequestException('Could not extract any expense from your speech. Please speak clearly with amount and item.');
     }
 
     // Save all entries directly
@@ -115,6 +139,43 @@ export class AIService {
       saved_count: saved.length,
       budget_alerts,
     };
+  }
+
+  async voiceBudget(userId: string, audioBuffer: Buffer, filename: string) {
+    const sttResult = await this.sttService.transcribe(audioBuffer, filename);
+    const transcript = sttResult.text;
+    this.logger.log(`Budget voice transcript: "${transcript}" | Lang: ${sttResult.language}`);
+
+    this.updateUserLanguage(userId, sttResult.language);
+
+    if (!transcript || transcript.trim().length === 0) {
+      throw new BadRequestException('Could not understand the audio. Please try again.');
+    }
+
+    const rawList = await this.llmService.parseBudget(transcript);
+    const validCategories = VALID_CATEGORIES;
+
+    const results: { category: string; period_type: string; limit_amount: number }[] = [];
+    for (const raw of rawList) {
+      let category = String(raw.category || '').toLowerCase().trim();
+      if (!validCategories.includes(category)) category = 'other';
+      const period_type = raw.period_type === 'weekly' ? 'weekly' : 'monthly';
+      const limit_amount = Number(raw.limit_amount);
+      if (!limit_amount || limit_amount <= 0) continue;
+
+      try {
+        await this.budgetService.create(userId, { category, period_type, limit_amount });
+        results.push({ category, period_type, limit_amount });
+      } catch (err) {
+        this.logger.warn(`Failed to create budget for ${category}: ${err}`);
+      }
+    }
+
+    if (results.length === 0) {
+      throw new BadRequestException('Could not extract any budget from your speech.');
+    }
+
+    return { transcription: transcript, budgets: results, saved_count: results.length };
   }
 
   async query(userId: string, question: string) {

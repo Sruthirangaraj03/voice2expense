@@ -1,4 +1,5 @@
-import { Controller, Post, Body, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, BadRequestException, UseGuards, Request } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { IsString, IsOptional } from 'class-validator';
 import { AIService } from './ai.service';
 import { ParseTextDto, QueryDto } from './dto/ai.dto';
@@ -12,8 +13,7 @@ class VoiceLogDto {
   filename: string;
 }
 
-const DEFAULT_USER_ID = '50f6bc48-568f-479e-901d-31eee14511aa';
-
+@UseGuards(AuthGuard('jwt'))
 @Controller('ai')
 export class AIController {
   constructor(private aiService: AIService) {}
@@ -22,6 +22,7 @@ export class AIController {
   transcribe(@Body() body: VoiceLogDto) {
     if (!body.audio) throw new BadRequestException('Audio data is required');
     const buffer = Buffer.from(body.audio, 'base64');
+    if (buffer.length > 5 * 1024 * 1024) throw new BadRequestException('Audio too large. Max 5MB.');
     return this.aiService.transcribe(buffer, body.filename || 'recording.wav');
   }
 
@@ -31,14 +32,23 @@ export class AIController {
   }
 
   @Post('voice-log')
-  voiceLog(@Body() body: VoiceLogDto) {
+  voiceLog(@Request() req: any, @Body() body: VoiceLogDto) {
     if (!body.audio) throw new BadRequestException('Audio data is required');
     const buffer = Buffer.from(body.audio, 'base64');
-    return this.aiService.voiceLog(DEFAULT_USER_ID, buffer, body.filename || 'recording.wav');
+    if (buffer.length > 5 * 1024 * 1024) throw new BadRequestException('Audio too large. Max 5MB.');
+    return this.aiService.voiceLog(req.user.sub, buffer, body.filename || 'recording.wav');
+  }
+
+  @Post('voice-budget')
+  voiceBudget(@Request() req: any, @Body() body: VoiceLogDto) {
+    if (!body.audio) throw new BadRequestException('Audio data is required');
+    const buffer = Buffer.from(body.audio, 'base64');
+    if (buffer.length > 5 * 1024 * 1024) throw new BadRequestException('Audio too large. Max 5MB.');
+    return this.aiService.voiceBudget(req.user.sub, buffer, body.filename || 'recording.wav');
   }
 
   @Post('query')
-  query(@Body() dto: QueryDto) {
-    return this.aiService.query(DEFAULT_USER_ID, dto.question);
+  query(@Request() req: any, @Body() dto: QueryDto) {
+    return this.aiService.query(req.user.sub, dto.question);
   }
 }
