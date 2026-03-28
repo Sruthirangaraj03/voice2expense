@@ -83,14 +83,17 @@ export default function DashboardLayout({
     return () => clearInterval(interval);
   }, [pathname]);
 
+  // Close dropdowns on outside click — only for desktop dropdowns, not modals
   useEffect(() => {
     function handleClick(e: MouseEvent) {
+      // Don't interfere with modals — they handle their own close via backdrop
+      if (profileOpen || notifOpen) return;
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
+  }, [profileOpen, notifOpen]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
